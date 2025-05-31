@@ -3,19 +3,57 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final TextEditingController _messageController = TextEditingController();
+  final List<ChatMessage> _messages = [
+    ChatMessage(
+      isUser: false,
+      message:
+          "Hi John, I'm here to help you with your cards. What would you like to know?",
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
+    final userName = currentUser?.email?.split('@')[0] ?? 'John';
 
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('CardSense AI'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: CircleAvatar(
+            backgroundImage: NetworkImage(
+              'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+            ),
+          ),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Welcome, ${userName.split('.')[0]}',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.black54),
             onPressed: () async {
               await ref.read(authProvider.notifier).signOut();
               if (context.mounted) {
@@ -25,142 +63,379 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Welcome Message
-            Text(
-              'Welcome back!',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 8),
-
-            if (currentUser?.email != null)
-              Text(
-                currentUser!.email!,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-              ),
-            const SizedBox(height: 32),
-
-            // Feature Cards
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _FeatureCard(
-                    icon: Icons.camera_alt,
-                    title: 'Scan Card',
-                    subtitle: 'Capture card details',
-                    onTap: () {
-                      // TODO: Navigate to card scanning
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Card scanning coming soon!')),
-                      );
-                    },
+                  // Credit Cards Section
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 200,
+                    child: PageView(
+                      children: [
+                        _CreditCard(
+                          cardName: 'Sapphire Card',
+                          cardDescription: '5x points on dining & travel',
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF2E5A87), Color(0xFF1E3A5F)],
+                          ),
+                          icon: Icons.verified_outlined,
+                        ),
+                        _CreditCard(
+                          cardName: 'Gold Card',
+                          cardDescription: '3x points on groceries',
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFD4AF37), Color(0xFFB8941F)],
+                          ),
+                          icon: Icons.star_outline,
+                        ),
+                      ],
+                    ),
                   ),
-                  _FeatureCard(
-                    icon: Icons.credit_card,
-                    title: 'My Cards',
-                    subtitle: 'View saved cards',
-                    onTap: () {
-                      // TODO: Navigate to cards list
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Cards list coming soon!')),
-                      );
-                    },
+
+                  const SizedBox(height: 30),
+
+                  // Quick Actions
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _QuickActionButton(
+                          title: 'Check offer on your cards',
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Checking offers...')),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _QuickActionButton(
+                          title: 'Check your card balance',
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Checking balance...')),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  _FeatureCard(
-                    icon: Icons.analytics,
-                    title: 'Analytics',
-                    subtitle: 'View insights',
-                    onTap: () {
-                      // TODO: Navigate to analytics
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Analytics coming soon!')),
-                      );
-                    },
-                  ),
-                  _FeatureCard(
-                    icon: Icons.settings,
-                    title: 'Settings',
-                    subtitle: 'App preferences',
-                    onTap: () {
-                      // TODO: Navigate to settings
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Settings coming soon!')),
-                      );
-                    },
+
+                  const SizedBox(height: 30),
+
+                  // Chat Messages
+                  Container(
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _messages.length,
+                            itemBuilder: (context, index) {
+                              final message = _messages[index];
+                              return _ChatBubble(message: message);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-          ],
+          ),
+
+          // Chat Input
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    child: TextField(
+                      controller: _messageController,
+                      decoration: const InputDecoration(
+                        hintText: 'Type your message...',
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                IconButton(
+                  onPressed: () {
+                    // TODO: Implement voice input
+                  },
+                  icon: const Icon(Icons.mic_outlined),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.grey[100],
+                    padding: const EdgeInsets.all(12),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: _sendMessage,
+                  icon: const Icon(Icons.send),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.all(12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _sendMessage() {
+    if (_messageController.text.trim().isEmpty) return;
+
+    setState(() {
+      _messages.add(ChatMessage(
+        isUser: true,
+        message: _messageController.text.trim(),
+      ));
+    });
+
+    _messageController.clear();
+
+    // Simulate AI response
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        _messages.add(ChatMessage(
+          isUser: false,
+          message:
+              "I understand you're asking about your cards. Let me help you with that information.",
+        ));
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+}
+
+class _CreditCard extends StatelessWidget {
+  final String cardName;
+  final String cardDescription;
+  final LinearGradient gradient;
+  final IconData icon;
+
+  const _CreditCard({
+    required this.cardName,
+    required this.cardDescription,
+    required this.gradient,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(right: 16),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    cardName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    cardDescription,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 40),
+          const Text(
+            '•••• •••• •••• 1234',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              letterSpacing: 2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionButton extends StatelessWidget {
+  final String title;
+  final VoidCallback onTap;
+
+  const _QuickActionButton({
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
   }
 }
 
-class _FeatureCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
+class _ChatBubble extends StatelessWidget {
+  final ChatMessage message;
 
-  const _FeatureCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
+  const _ChatBubble({required this.message});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 4,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 48,
-                color: Theme.of(context).primaryColor,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!message.isUser) ...[
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.blue[100],
+              child: Icon(
+                Icons.support_agent,
+                size: 18,
+                color: Colors.blue[600],
               ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                textAlign: TextAlign.center,
+            ),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: message.isUser ? Colors.blue[500] : Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                textAlign: TextAlign.center,
+              child: Text(
+                message.message,
+                style: TextStyle(
+                  color: message.isUser ? Colors.white : Colors.black87,
+                  fontSize: 14,
+                ),
               ),
-            ],
+            ),
           ),
-        ),
+          if (message.isUser) const SizedBox(width: 40),
+        ],
       ),
     );
   }
+}
+
+class ChatMessage {
+  final bool isUser;
+  final String message;
+
+  ChatMessage({
+    required this.isUser,
+    required this.message,
+  });
 }
