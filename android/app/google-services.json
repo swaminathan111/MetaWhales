@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "480921289409",
+    "project_id": "cardsense-ai",
+    "storage_bucket": "cardsense-ai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:480921289409:android:a68e5386d4ab3b94250a40",
+        "android_client_info": {
+          "package_name": "com.example.cardsense_ai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "480921289409-ql69376ap4seji98fdgfamhd9r7jrklf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cardsense_ai",
+            "certificate_hash": "502b8115cee4b4974bf77f416a2fe354b96ae397"
+          }
+        },
+        {
+          "client_id": "480921289409-6fspjd7c0rhvgs4h5l38utf1q8ksn4bd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABXkvhuvkZHLI3OXWHbqSAtvZGu8FaLw4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "480921289409-6fspjd7c0rhvgs4h5l38utf1q8ksn4bd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
