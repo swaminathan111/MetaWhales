@@ -5,26 +5,24 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:cardsense_ai/main.dart';
+import 'package:cardsense_ai/services/onboarding_service.dart';
 
 void main() {
-  testWidgets('CardSense AI app smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('App smoke test', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingService = OnboardingService(prefs);
+
     await tester.pumpWidget(
-      const ProviderScope(
-        child: CardSenseApp(),
-      ),
+      MyApp(onboardingService: onboardingService),
     );
 
-    // Verify that the splash screen loads
-    expect(find.text('CardSense AI'), findsOneWidget);
-    expect(find.text('AI-Powered Card Recognition'), findsOneWidget);
-
-    // Verify loading indicator is present
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    // Verify that the login screen is shown initially
+    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Log in to your account'), findsOneWidget);
   });
 }

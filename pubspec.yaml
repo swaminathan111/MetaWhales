@@ -49,6 +49,9 @@ dependencies:
   
   # UI components
   flutter_svg: ^2.0.10+1
+  
+  # Shared preferences
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
@@ -74,10 +77,8 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - .env.dev
-    - .env.prod
-    - assets/images/
-    - assets/icons/
+    - lib/features/landing/assets/images/
+    - lib/features/auth/assets/icons/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
