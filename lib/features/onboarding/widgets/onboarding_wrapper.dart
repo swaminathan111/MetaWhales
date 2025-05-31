@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../screens/add_card_screen.dart';
+import '../screens/onboarding_screen.dart';
 import '../../../services/onboarding_service.dart';
 
 class OnboardingWrapper extends StatelessWidget {
@@ -19,6 +19,6 @@ class OnboardingWrapper extends StatelessWidget {
       return child;
     }
 
-    return const AddCardScreen();
+    return const OnboardingScreen();
   }
 }

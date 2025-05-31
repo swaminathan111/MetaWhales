@@ -5,7 +5,7 @@ import '../features/auth/screens/signup_screen.dart';
 import '../features/landing/screens/landing_screen.dart';
 import '../features/splash/splash_screen.dart';
 import '../features/home/home_screen.dart';
-import '../features/onboarding/screens/add_card_screen.dart';
+import '../features/onboarding/screens/onboarding_screen.dart';
 import '../services/onboarding_service.dart';
 
 class AppRouter {
@@ -47,7 +47,7 @@ class AppRouter {
         GoRoute(
           path: '/onboarding',
           name: 'onboarding',
-          builder: (context, state) => const AddCardScreen(),
+          builder: (context, state) => const OnboardingScreen(),
         ),
 
         // Home Screen
