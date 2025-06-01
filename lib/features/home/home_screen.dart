@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
+import '../chat/services/chat_service.dart';
+import '../chat/services/speech_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -12,13 +14,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final TextEditingController _messageController = TextEditingController();
-  final List<ChatMessage> _messages = [
-    ChatMessage(
-      isUser: false,
-      message:
-          "Hi John, I'm here to help you with your cards. What would you like to know?",
-    ),
-  ];
+  final ScrollController _scrollController = ScrollController();
+  bool _isTyping = false;
 
   @override
   Widget build(BuildContext context) {
@@ -151,12 +148,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: Column(
                       children: [
                         Expanded(
-                          child: ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: _messages.length,
-                            itemBuilder: (context, index) {
-                              final message = _messages[index];
-                              return _ChatBubble(message: message);
+                          child: Consumer(
+                            builder: (context, ref, child) {
+                              final messages = ref.watch(chatMessagesProvider);
+                              return ListView.builder(
+                                controller: _scrollController,
+                                padding: const EdgeInsets.all(16),
+                                itemCount: messages.length,
+                                itemBuilder: (context, index) {
+                                  final message = messages[index];
+                                  return _ChatBubble(message: message);
+                                },
+                              );
                             },
                           ),
                         ),
@@ -203,15 +206,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                IconButton(
-                  onPressed: () {
-                    // TODO: Implement voice input
+                Consumer(
+                  builder: (context, ref, child) {
+                    final isListening = ref.watch(isListeningProvider);
+                    final speechText = ref.watch(speechTextProvider);
+
+                    // Update text field with speech text
+                    if (speechText.isNotEmpty &&
+                        _messageController.text != speechText) {
+                      _messageController.text = speechText;
+                    }
+
+                    return IconButton(
+                      onPressed: () async {
+                        final speechNotifier =
+                            ref.read(speechStateProvider.notifier);
+                        if (isListening) {
+                          await speechNotifier.stopListening();
+                          // Send the message if we have text
+                          if (speechText.isNotEmpty) {
+                            _sendMessage();
+                            speechNotifier.clearText();
+                          }
+                        } else {
+                          await speechNotifier.startListening();
+                        }
+                      },
+                      icon: Icon(isListening ? Icons.mic : Icons.mic_outlined),
+                      style: IconButton.styleFrom(
+                        backgroundColor:
+                            isListening ? Colors.red[100] : Colors.grey[100],
+                        foregroundColor:
+                            isListening ? Colors.red : Colors.grey[700],
+                        padding: const EdgeInsets.all(12),
+                      ),
+                    );
                   },
-                  icon: const Icon(Icons.mic_outlined),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.grey[100],
-                    padding: const EdgeInsets.all(12),
-                  ),
                 ),
                 const SizedBox(width: 8),
                 IconButton(
@@ -231,33 +261,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _sendMessage() {
+  void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
 
-    setState(() {
-      _messages.add(ChatMessage(
-        isUser: true,
-        message: _messageController.text.trim(),
-      ));
-    });
-
+    final message = _messageController.text.trim();
     _messageController.clear();
 
-    // Simulate AI response
-    Future.delayed(const Duration(seconds: 1), () {
-      setState(() {
-        _messages.add(ChatMessage(
-          isUser: false,
-          message:
-              "I understand you're asking about your cards. Let me help you with that information.",
-        ));
-      });
+    // Add user message
+    final chatNotifier = ref.read(chatMessagesProvider.notifier);
+    final chatService = ref.read(chatServiceProvider);
+    final messages = ref.read(chatMessagesProvider);
+
+    chatNotifier.addMessage(ChatMessage.user(message));
+
+    // Scroll to bottom
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
     });
+
+    try {
+      // Add typing indicator
+      chatNotifier.addTypingIndicator();
+
+      // Get AI response
+      final response = await chatService.sendMessage(
+        message: message,
+        conversationHistory: messages,
+      );
+
+      // Remove typing indicator and add response
+      chatNotifier.removeTypingIndicator();
+      chatNotifier.addMessage(ChatMessage.assistant(response));
+
+      // Scroll to bottom again
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+    } catch (e) {
+      // Remove typing indicator and show error
+      chatNotifier.removeTypingIndicator();
+      chatNotifier.addMessage(ChatMessage.assistant(
+        "Sorry, I'm having trouble connecting right now. Please check your internet connection and try again.",
+      ));
+    }
   }
 
   @override
   void dispose() {
     _messageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 }
@@ -428,14 +488,4 @@ class _ChatBubble extends StatelessWidget {
       ),
     );
   }
-}
-
-class ChatMessage {
-  final bool isUser;
-  final String message;
-
-  ChatMessage({
-    required this.isUser,
-    required this.message,
-  });
 }

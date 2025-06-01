@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Speech Recognition Permissions -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs access to microphone for speech-to-text functionality to help you interact with your credit card assistant.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>This app uses speech recognition to convert your voice to text for easier interaction with the AI assistant.</string>
 </dict>
 </plist>
