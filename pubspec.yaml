@@ -49,6 +49,7 @@ dependencies:
   
   # UI components
   flutter_svg: ^2.0.10+1
+  flutter_colorpicker: ^1.0.3
   
   # Shared preferences
   shared_preferences: ^2.2.2

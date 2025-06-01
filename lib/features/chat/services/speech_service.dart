@@ -48,8 +48,9 @@ class SpeechService {
   Future<void> startListening({
     required Function(String) onResult,
     required Function(bool) onListeningStateChanged,
+    Function(double)? onSoundLevel,
     String localeId = 'en_US',
-    Duration listenFor = const Duration(seconds: 10),
+    Duration listenFor = const Duration(seconds: 30),
     Duration pauseFor = const Duration(seconds: 3),
   }) async {
     if (!_isAvailable) {
@@ -71,10 +72,10 @@ class SpeechService {
         pauseFor: pauseFor,
         partialResults: true,
         onSoundLevelChange: (level) {
-          // Optional: Use this for visual feedback
+          onSoundLevel?.call(level);
         },
         cancelOnError: true,
-        listenMode: ListenMode.confirmation,
+        listenMode: ListenMode.dictation,
       );
 
       _isListening = true;
@@ -83,6 +84,7 @@ class SpeechService {
       _logger.e('Failed to start listening: $e');
       _isListening = false;
       onListeningStateChanged(false);
+      rethrow;
     }
   }
 
@@ -140,6 +142,7 @@ class SpeechState {
   final String currentText;
   final String? error;
   final List<LocaleName> availableLocales;
+  final double soundLevel;
 
   SpeechState({
     this.isListening = false,
@@ -148,6 +151,7 @@ class SpeechState {
     this.currentText = '',
     this.error,
     this.availableLocales = const [],
+    this.soundLevel = 0.0,
   });
 
   SpeechState copyWith({
@@ -157,6 +161,7 @@ class SpeechState {
     String? currentText,
     String? error,
     List<LocaleName>? availableLocales,
+    double? soundLevel,
   }) {
     return SpeechState(
       isListening: isListening ?? this.isListening,
@@ -165,6 +170,7 @@ class SpeechState {
       currentText: currentText ?? this.currentText,
       error: error,
       availableLocales: availableLocales ?? this.availableLocales,
+      soundLevel: soundLevel ?? this.soundLevel,
     );
   }
 

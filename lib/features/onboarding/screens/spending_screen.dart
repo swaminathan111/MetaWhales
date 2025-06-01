@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_preferences.dart';
 
-class OptimizationScreen extends ConsumerWidget {
+class SpendingScreen extends ConsumerWidget {
   final VoidCallback onNext;
 
-  const OptimizationScreen({
+  const SpendingScreen({
     super.key,
     required this.onNext,
   });
@@ -13,13 +13,11 @@ class OptimizationScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preferences = ref.watch(userPreferencesProvider);
-    final optimizations = [
-      'Rewards / Cashback',
-      'Lounge access',
-      'Travel perks',
-      'Low fees',
-      'Fuel savings',
-      'Dining deals',
+    final spendingRanges = [
+      '₹0-10k',
+      '₹10-30k',
+      '₹30-75k',
+      '₹75k+',
     ];
 
     return Padding(
@@ -28,7 +26,7 @@ class OptimizationScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'What do you most want to\noptimise?',
+            'Roughly how much do you\nspend on cards each month?',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -36,7 +34,7 @@ class OptimizationScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Select all that apply',
+            'This helps us recommend the right card for\nyour spending habits',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[600],
@@ -45,17 +43,16 @@ class OptimizationScreen extends ConsumerWidget {
           const SizedBox(height: 32),
           Expanded(
             child: ListView.separated(
-              itemCount: optimizations.length,
+              itemCount: spendingRanges.length,
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
-                final optimization = optimizations[index];
-                final isSelected =
-                    preferences.selectedOptimizations.contains(optimization);
+                final range = spendingRanges[index];
+                final isSelected = preferences.monthlySpending == range;
                 return InkWell(
                   onTap: () {
                     ref
                         .read(userPreferencesProvider.notifier)
-                        .toggleOptimization(optimization);
+                        .setMonthlySpending(range);
                   },
                   child: Container(
                     padding: const EdgeInsets.all(16),
@@ -100,7 +97,7 @@ class OptimizationScreen extends ConsumerWidget {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          optimization,
+                          range,
                           style: TextStyle(
                             fontSize: 16,
                             color: isSelected

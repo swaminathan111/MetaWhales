@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 import '../chat/services/chat_service.dart';
 import '../chat/services/speech_service.dart';
+import '../cards/models/card_info.dart';
+import '../cards/providers/card_provider.dart';
+import '../cards/screens/add_card_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -12,10 +15,21 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  bool _isTyping = false;
+  final bool _isTyping = false;
+  late AnimationController _rippleController;
+
+  @override
+  void initState() {
+    super.initState();
+    _rippleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,8 +41,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
+        leading: const Padding(
+          padding: EdgeInsets.all(8.0),
           child: CircleAvatar(
             backgroundImage: NetworkImage(
               'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
@@ -70,58 +84,277 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   // Credit Cards Section
                   const SizedBox(height: 10),
-                  SizedBox(
-                    height: 200,
-                    child: PageView(
-                      children: [
-                        _CreditCard(
-                          cardName: 'Sapphire Card',
-                          cardDescription: '5x points on dining & travel',
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFF2E5A87), Color(0xFF1E3A5F)],
-                          ),
-                          icon: Icons.verified_outlined,
-                        ),
-                        _CreditCard(
-                          cardName: 'Gold Card',
-                          cardDescription: '3x points on groceries',
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFFD4AF37), Color(0xFFB8941F)],
-                          ),
-                          icon: Icons.star_outline,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // Quick Actions
-                  Row(
+                  Stack(
                     children: [
-                      Expanded(
-                        child: _QuickActionButton(
-                          title: 'Check offer on your cards',
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Checking offers...')),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _QuickActionButton(
-                          title: 'Check your card balance',
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Checking balance...')),
+                      SizedBox(
+                        height: 200,
+                        child: Consumer(
+                          builder: (context, ref, child) {
+                            final cards = ref.watch(cardsProvider);
+                            if (cards.isEmpty) {
+                              return Center(
+                                child: Text(
+                                  'No cards added yet',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              );
+                            }
+                            return PageView.builder(
+                              clipBehavior: Clip.none,
+                              itemCount: cards.length + 1,
+                              pageSnapping: true,
+                              controller:
+                                  PageController(viewportFraction: 0.85),
+                              itemBuilder: (context, index) {
+                                if (index == cards.length) {
+                                  return GestureDetector(
+                                    onTap: () {
+                                      showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.white,
+                                        shape: const RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.vertical(
+                                              top: Radius.circular(20)),
+                                        ),
+                                        builder: (context) => SizedBox(
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
+                                              0.9,
+                                          child: AddCardScreen(
+                                            onCardAdded: () {
+                                              Navigator.pop(context);
+                                              setState(() {});
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: Colors.grey[300]!,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.add_circle_outline,
+                                            size: 48,
+                                            color: Colors.grey[600],
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            'Add New Card',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.grey[600],
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }
+                                final card = cards[index];
+                                return GestureDetector(
+                                  onLongPress: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      builder: (context) => Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 20),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            ListTile(
+                                              leading: const Icon(Icons.edit),
+                                              title: const Text('Edit Card'),
+                                              onTap: () {
+                                                Navigator.pop(context);
+                                                showModalBottomSheet(
+                                                  context: context,
+                                                  isScrollControlled: true,
+                                                  backgroundColor: Colors.white,
+                                                  shape:
+                                                      const RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.vertical(
+                                                            top:
+                                                                Radius.circular(
+                                                                    20)),
+                                                  ),
+                                                  builder: (context) =>
+                                                      SizedBox(
+                                                    height:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .height *
+                                                            0.9,
+                                                    child: AddCardScreen(
+                                                      onCardAdded: () {
+                                                        Navigator.pop(context);
+                                                        setState(() {});
+                                                      },
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                            ListTile(
+                                              leading: const Icon(Icons.delete,
+                                                  color: Colors.red),
+                                              title: const Text('Delete Card',
+                                                  style: TextStyle(
+                                                      color: Colors.red)),
+                                              onTap: () {
+                                                Navigator.pop(context);
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      AlertDialog(
+                                                    title: const Text(
+                                                        'Delete Card'),
+                                                    content: Text(
+                                                        'Are you sure you want to delete ${card.bank} ${card.cardType}?'),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.pop(
+                                                                context),
+                                                        child: const Text(
+                                                            'Cancel'),
+                                                      ),
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          ref
+                                                              .read(
+                                                                  cardsProvider
+                                                                      .notifier)
+                                                              .removeCard(
+                                                                  card.id);
+                                                          Navigator.pop(
+                                                              context);
+                                                        },
+                                                        child: const Text(
+                                                            'Delete',
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .red)),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 8),
+                                    padding: const EdgeInsets.all(24),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: card.gradientColors,
+                                      ),
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.15),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 8),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    card.bank,
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 20,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    card.cardType,
+                                                    style: TextStyle(
+                                                      color: Colors.white
+                                                          .withOpacity(0.8),
+                                                      fontSize: 14,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white
+                                                    .withOpacity(0.2),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Icon(
+                                                card.icon,
+                                                color: Colors.white,
+                                                size: 24,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 40),
+                                        const Text(
+                                          '•••• •••• •••• 1234',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            letterSpacing: 2,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
                             );
                           },
                         ),
@@ -131,15 +364,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                   const SizedBox(height: 30),
 
+                  // Quick Actions
+                  // Row(
+                  //   children: [
+                  //     Expanded(
+                  //       child: _QuickActionButton(
+                  //         title: 'Check offer on your cards',
+                  //         onTap: () {
+                  //           ScaffoldMessenger.of(context).showSnackBar(
+                  //             const SnackBar(
+                  //                 content: Text('Checking offers...')),
+                  //           );
+                  //         },
+                  //       ),
+                  //     ),
+                  //     const SizedBox(width: 12),
+                  //     Expanded(
+                  //       child: _QuickActionButton(
+                  //         title: 'Check your card balance',
+                  //         onTap: () {
+                  //           ScaffoldMessenger.of(context).showSnackBar(
+                  //             const SnackBar(
+                  //                 content: Text('Checking balance...')),
+                  //           );
+                  //         },
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
+
                   // Chat Messages
                   Container(
-                    height: 200,
+                    height: MediaQuery.of(context).size.height * 0.5,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withAlpha(13),
                           blurRadius: 10,
                           offset: const Offset(0, 2),
                         ),
@@ -178,7 +440,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withAlpha(13),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
@@ -210,6 +472,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   builder: (context, ref, child) {
                     final isListening = ref.watch(isListeningProvider);
                     final speechText = ref.watch(speechTextProvider);
+                    final speechState = ref.watch(speechStateProvider);
 
                     // Update text field with speech text
                     if (speechText.isNotEmpty &&
@@ -217,29 +480,81 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       _messageController.text = speechText;
                     }
 
-                    return IconButton(
-                      onPressed: () async {
-                        final speechNotifier =
-                            ref.read(speechStateProvider.notifier);
-                        if (isListening) {
-                          await speechNotifier.stopListening();
-                          // Send the message if we have text
-                          if (speechText.isNotEmpty) {
-                            _sendMessage();
-                            speechNotifier.clearText();
-                          }
-                        } else {
-                          await speechNotifier.startListening();
-                        }
-                      },
-                      icon: Icon(isListening ? Icons.mic : Icons.mic_outlined),
-                      style: IconButton.styleFrom(
-                        backgroundColor:
-                            isListening ? Colors.red[100] : Colors.grey[100],
-                        foregroundColor:
-                            isListening ? Colors.red : Colors.grey[700],
-                        padding: const EdgeInsets.all(12),
-                      ),
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Ripple effect when listening
+                        if (isListening)
+                          AnimatedBuilder(
+                            animation: _rippleController,
+                            builder: (context, child) {
+                              return Container(
+                                width: 48 + (_rippleController.value * 20),
+                                height: 48 + (_rippleController.value * 20),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.red.withOpacity(
+                                      0.3 * (1 - _rippleController.value)),
+                                ),
+                              );
+                            },
+                          ),
+
+                        // Sound level indicator
+                        if (isListening)
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.red.withOpacity(0.5),
+                                width: 2 + (speechState.soundLevel / 10),
+                              ),
+                            ),
+                          ),
+
+                        // Mic button
+                        IconButton(
+                          onPressed: () async {
+                            final speechNotifier =
+                                ref.read(speechStateProvider.notifier);
+                            if (isListening) {
+                              await speechNotifier.stopListening();
+                              // Send the message if we have text
+                              if (speechText.isNotEmpty) {
+                                _sendMessage();
+                                speechNotifier.clearText();
+                              }
+                            } else {
+                              try {
+                                await speechNotifier.startListening();
+                              } catch (e) {
+                                // Show error message
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error: ${e.toString()}'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            }
+                          },
+                          icon: Icon(
+                            isListening ? Icons.mic : Icons.mic_none,
+                            size: 28,
+                          ),
+                          style: IconButton.styleFrom(
+                            backgroundColor:
+                                isListening ? Colors.red : Colors.grey[100],
+                            foregroundColor:
+                                isListening ? Colors.white : Colors.grey[700],
+                            padding: const EdgeInsets.all(12),
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),
@@ -318,6 +633,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _rippleController.dispose();
     super.dispose();
   }
 }
@@ -338,7 +654,7 @@ class _CreditCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(right: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 8),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: gradient,
