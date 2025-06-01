@@ -24,7 +24,7 @@ class LandingScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         image: const DecorationImage(
                           image: AssetImage(
-                              'lib/features/landing/assets/images/landing.jpg'),
+                              'lib/features/landing/assets/images/landing.png'),
                           fit: BoxFit.cover,
                         ),
                       ),
