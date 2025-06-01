@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
-import '../chat/services/chat_service.dart';
 import '../chat/services/speech_service.dart';
+import '../chat/services/openrouter_service.dart';
 import '../cards/models/card_info.dart';
 import '../cards/providers/card_provider.dart';
 import '../cards/screens/add_card_screen.dart';
@@ -412,7 +412,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         Expanded(
                           child: Consumer(
                             builder: (context, ref, child) {
-                              final messages = ref.watch(chatMessagesProvider);
+                              final messages =
+                                  ref.watch(corsCompatibleChatMessagesProvider);
                               return ListView.builder(
                                 controller: _scrollController,
                                 padding: const EdgeInsets.all(16),
@@ -583,9 +584,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     _messageController.clear();
 
     // Add user message
-    final chatNotifier = ref.read(chatMessagesProvider.notifier);
-    final chatService = ref.read(chatServiceProvider);
-    final messages = ref.read(chatMessagesProvider);
+    final chatNotifier = ref.read(corsCompatibleChatMessagesProvider.notifier);
+    final chatService = ref.read(openRouterServiceProvider);
+    final messages = ref.read(corsCompatibleChatMessagesProvider);
 
     chatNotifier.addMessage(ChatMessage.user(message));
 

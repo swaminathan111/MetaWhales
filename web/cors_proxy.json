@@ -1,0 +1,18 @@
+{
+  "proxy": {
+    "/api/*": {
+      "target": "https://openrouter.ai",
+      "secure": true,
+      "changeOrigin": true,
+      "logLevel": "debug",
+      "pathRewrite": {
+        "^/api": "/api/v1"
+      },
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, HTTP-Referer, X-Title"
+      }
+    }
+  }
+} 
