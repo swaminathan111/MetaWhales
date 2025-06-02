@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'openrouter_service.dart';
+import 'rag_chat_service.dart';
 
 class ChatPersistenceService {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -282,7 +283,7 @@ class ChatConversation {
 // Enhanced chat messages notifier with persistence
 class PersistentChatMessagesNotifier extends StateNotifier<List<ChatMessage>> {
   final ChatPersistenceService _persistenceService;
-  final OpenRouterService _chatService;
+  final EnhancedChatService _chatService;
   String? _currentConversationId;
   final Logger _logger = Logger();
 
@@ -375,6 +376,7 @@ class PersistentChatMessagesNotifier extends StateNotifier<List<ChatMessage>> {
         message: message,
         conversationHistory:
             state.where((msg) => msg.message != "...").toList(),
+        model: 'rag-enhanced', // Use RAG model for better credit card responses
       );
 
       final responseTime = DateTime.now().difference(startTime).inMilliseconds;
@@ -477,7 +479,7 @@ final persistentChatMessagesProvider =
     StateNotifierProvider<PersistentChatMessagesNotifier, List<ChatMessage>>(
         (ref) {
   final persistenceService = ref.read(chatPersistenceServiceProvider);
-  final chatService = ref.read(openRouterServiceProvider);
+  final chatService = ref.read(enhancedChatServiceProvider);
   return PersistentChatMessagesNotifier(persistenceService, chatService);
 });
 

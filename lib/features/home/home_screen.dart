@@ -5,7 +5,10 @@ import '../auth/auth_provider.dart';
 import '../chat/services/speech_service.dart';
 import '../chat/services/openrouter_service.dart';
 import '../chat/services/chat_persistence_service.dart';
+import '../chat/services/rag_chat_service.dart';
 import '../chat/screens/chat_history_screen.dart';
+import '../chat/screens/rag_test_screen.dart';
+import '../chat/widgets/service_status_indicator.dart';
 import '../cards/models/card_info.dart';
 import '../cards/providers/card_provider.dart';
 import '../cards/screens/add_card_screen.dart';
@@ -425,12 +428,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Chat with CardSense AI',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Chat with CardSense AI',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    GestureDetector(
+                                      onTap: () {
+                                        // Show service status dialog
+                                        final availability = ref.read(
+                                            chatServiceAvailabilityProvider);
+                                        availability.whenData((data) {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) =>
+                                                ServiceStatusDialog(
+                                              availability: data,
+                                            ),
+                                          );
+                                        });
+                                      },
+                                      child: const ServiceStatusIndicator(),
+                                    ),
+                                  ],
                                 ),
                               ),
                               Row(
@@ -637,6 +665,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
           ),
         ],
+      ),
+      // Debug FAB for RAG testing (remove in production)
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const RagTestScreen(),
+            ),
+          );
+        },
+        backgroundColor: Colors.orange,
+        child: const Icon(Icons.bug_report, color: Colors.white),
+        tooltip: 'Test RAG API',
       ),
     );
   }
