@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 import '../chat/services/speech_service.dart';
 import '../chat/services/openrouter_service.dart';
+import '../chat/services/chat_persistence_service.dart';
+import '../chat/screens/chat_history_screen.dart';
 import '../cards/models/card_info.dart';
 import '../cards/providers/card_provider.dart';
 import '../cards/screens/add_card_screen.dart';
@@ -409,11 +411,73 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     ),
                     child: Column(
                       children: [
+                        // Chat header with history button
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Colors.grey[200]!,
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Chat with CardSense AI',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.history),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const ChatHistoryScreen(),
+                                        ),
+                                      );
+                                    },
+                                    tooltip: 'Chat History',
+                                    iconSize: 20,
+                                  ),
+                                  IconButton(
+                                    icon:
+                                        const Icon(Icons.add_comment_outlined),
+                                    onPressed: () async {
+                                      final chatNotifier = ref.read(
+                                          persistentChatMessagesProvider
+                                              .notifier);
+                                      await chatNotifier.startNewConversation();
+                                    },
+                                    tooltip: 'New Chat',
+                                    iconSize: 20,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                         Expanded(
                           child: Consumer(
                             builder: (context, ref, child) {
                               final messages =
-                                  ref.watch(corsCompatibleChatMessagesProvider);
+                                  ref.watch(persistentChatMessagesProvider);
+
+                              if (messages.isEmpty) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
+
                               return ListView.builder(
                                 controller: _scrollController,
                                 padding: const EdgeInsets.all(16),
@@ -583,12 +647,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final message = _messageController.text.trim();
     _messageController.clear();
 
-    // Add user message
-    final chatNotifier = ref.read(corsCompatibleChatMessagesProvider.notifier);
-    final chatService = ref.read(openRouterServiceProvider);
-    final messages = ref.read(corsCompatibleChatMessagesProvider);
+    // Use the persistent chat notifier
+    final chatNotifier = ref.read(persistentChatMessagesProvider.notifier);
 
-    chatNotifier.addMessage(ChatMessage.user(message));
+    // Send message with persistence
+    await chatNotifier.sendMessage(message);
 
     // Scroll to bottom
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -599,35 +662,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       );
     });
 
-    try {
-      // Add typing indicator
-      chatNotifier.addTypingIndicator();
-
-      // Get AI response
-      final response = await chatService.sendMessage(
-        message: message,
-        conversationHistory: messages,
-      );
-
-      // Remove typing indicator and add response
-      chatNotifier.removeTypingIndicator();
-      chatNotifier.addMessage(ChatMessage.assistant(response));
-
-      // Scroll to bottom again
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+    // Scroll to bottom again after AI response
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        if (mounted) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
       });
-    } catch (e) {
-      // Remove typing indicator and show error
-      chatNotifier.removeTypingIndicator();
-      chatNotifier.addMessage(ChatMessage.assistant(
-        "Sorry, I'm having trouble connecting right now. Please check your internet connection and try again.",
-      ));
-    }
+    });
   }
 
   @override
