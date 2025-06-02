@@ -527,3 +527,83 @@ $$ LANGUAGE plpgsql;
 -- ============================================================================
 -- END OF FUNCTIONS
 -- ============================================================================ 
+
+
+-- Fix for foreign key constraint violation: auto-create user profiles
+-- This ensures user_profiles table always has an entry when auth.users is created
+
+-- Create a function to automatically create user profile
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.user_profiles (
+    id,
+    email,
+    full_name,
+    notification_preferences,
+    privacy_settings,
+    ai_chat_enabled,
+    speech_to_text_enabled,
+    created_at,
+    updated_at,
+    last_active_at
+  )
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', SPLIT_PART(NEW.email, '@', 1)),
+    '{"push_notifications": true, "email_alerts": true, "chat_notifications": true}'::jsonb,
+    '{"data_sharing": false, "analytics": true}'::jsonb,
+    TRUE,
+    TRUE,
+    NOW(),
+    NOW(),
+    NOW()
+  )
+  ON CONFLICT (id) DO NOTHING; -- Prevent duplicate key errors
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger to automatically create user profile when user signs up
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_new_user();
+
+-- Create profiles for existing users who don't have them (FIX CURRENT STATE)
+INSERT INTO public.user_profiles (
+  id,
+  email,
+  full_name,
+  notification_preferences,
+  privacy_settings,
+  ai_chat_enabled,
+  speech_to_text_enabled,
+  created_at,
+  updated_at,
+  last_active_at
+)
+SELECT 
+  u.id,
+  u.email,
+  COALESCE(u.raw_user_meta_data->>'full_name', SPLIT_PART(u.email, '@', 1)) as full_name,
+  '{"push_notifications": true, "email_alerts": true, "chat_notifications": true}'::jsonb as notification_preferences,
+  '{"data_sharing": false, "analytics": true}'::jsonb as privacy_settings,
+  TRUE as ai_chat_enabled,
+  TRUE as speech_to_text_enabled,
+  u.created_at,
+  NOW() as updated_at,
+  NOW() as last_active_at
+FROM auth.users u
+LEFT JOIN public.user_profiles p ON u.id = p.id
+WHERE p.id IS NULL;
+
+-- Add comment
+COMMENT ON FUNCTION public.handle_new_user() IS 'Automatically creates a user profile when a new user signs up';
+
+-- Grant necessary permissions
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO service_role;
