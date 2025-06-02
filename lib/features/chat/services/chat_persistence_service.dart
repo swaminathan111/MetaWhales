@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'openrouter_service.dart';
 import 'rag_chat_service.dart';
+import '../../auth/services/profile_service.dart';
 
 class ChatPersistenceService {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -13,6 +14,11 @@ class ChatPersistenceService {
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) throw Exception('User not authenticated');
+
+      // Ensure user profile exists before creating conversation
+      final profileService = ProfileService();
+      await profileService.ensureUserProfile();
+      _logger.d('User profile verified for conversation creation');
 
       // Check for existing active conversation
       final response = await _supabase
@@ -295,6 +301,10 @@ class PersistentChatMessagesNotifier extends StateNotifier<List<ChatMessage>> {
   /// Initialize conversation and load history
   Future<void> _initializeConversation() async {
     try {
+      // Ensure user profile exists first
+      final profileService = ProfileService();
+      await profileService.ensureUserProfile();
+
       _currentConversationId =
           await _persistenceService.getCurrentConversationId();
       final history = await _persistenceService.loadConversationHistory(
