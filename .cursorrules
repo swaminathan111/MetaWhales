@@ -1,0 +1,43 @@
+# Cursor Rules for MetaWhales Project
+
+## Documentation Organization
+- All documentation files (*.md) should be placed in the `docs/` folder
+- This includes:
+  - Setup guides
+  - API documentation
+  - Troubleshooting guides
+  - Configuration documentation
+  - Architecture documentation
+  - User guides
+- Exception: README.md can remain in the root directory as it's the main project overview
+
+## Code Organization
+- Follow Flutter project structure conventions
+- Place feature-specific code in `lib/features/`
+- Shared services go in `lib/services/`
+- Core utilities in `lib/core/`
+- Assets organized by type in `assets/`
+
+## Database Organization
+- Database schema files in `database/schema/`
+- Migration scripts in `database/scripts/`
+- Seed data in `database/seeds/`
+- Database documentation in `database/`
+
+## Environment Configuration
+- Environment files (.env.*) should be in the root directory
+- Environment configuration documentation should be in `docs/`
+- Never commit actual environment files with sensitive data
+
+## Testing
+- Unit tests in `test/`
+- Integration tests in `test/integration/`
+- Widget tests follow Flutter conventions
+
+## Documentation Standards
+- Use clear, descriptive titles
+- Include table of contents for long documents
+- Provide code examples where applicable
+- Include troubleshooting sections
+- Document both development and production setups
+- Keep documentation up to date with code changes 
