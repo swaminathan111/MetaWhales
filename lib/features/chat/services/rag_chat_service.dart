@@ -3,9 +3,9 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'openrouter_service.dart';
+import '../../../services/env_service.dart';
 
 class RagChatService {
-  static const String _baseUrl = 'https://cardsense-ai.vercel.app/api/query';
   final Logger _logger = Logger();
 
   /// Send message to RAG API with conversation history
@@ -18,33 +18,48 @@ class RagChatService {
       _logger.d(
           'Sending message to RAG API: ${message.substring(0, message.length > 50 ? 50 : message.length)}...');
 
-      // Prepare messages in the format expected by the RAG API
-      final messages = <Map<String, dynamic>>[];
+      final baseUrl = EnvService.selectedRagApiBaseUrl;
+      final isNewApi = EnvService.useNewRagApi;
 
-      // Add conversation history
-      for (final msg in conversationHistory) {
+      _logger.d('Using RAG API: $baseUrl (${isNewApi ? 'new' : 'old'} format)');
+
+      // Prepare request body based on API version
+      Map<String, dynamic> requestBody;
+
+      if (isNewApi) {
+        // New API format: simple question field
+        requestBody = {
+          'question': message,
+        };
+      } else {
+        // Old API format: messages array with conversation history
+        final messages = <Map<String, dynamic>>[];
+
+        // Add conversation history
+        for (final msg in conversationHistory) {
+          messages.add({
+            'role': msg.isUser ? 'user' : 'assistant',
+            'content': msg.message,
+          });
+        }
+
+        // Add current message
         messages.add({
-          'role': msg.isUser ? 'user' : 'assistant',
-          'content': msg.message,
+          'role': 'user',
+          'content': message,
         });
+
+        requestBody = {
+          'messages': messages,
+          'stream': false,
+        };
       }
-
-      // Add current message
-      messages.add({
-        'role': 'user',
-        'content': message,
-      });
-
-      final requestBody = {
-        'messages': messages,
-        'stream': false, // Set to false for simple response
-      };
 
       _logger.d('RAG API request: ${json.encode(requestBody)}');
 
       final response = await http
           .post(
-        Uri.parse(_baseUrl),
+        Uri.parse(baseUrl),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -55,7 +70,7 @@ class RagChatService {
         body: json.encode(requestBody),
       )
           .timeout(
-        const Duration(seconds: 60), // Match Python script timeout
+        const Duration(seconds: 60),
         onTimeout: () {
           throw Exception(
               'RAG API request timeout (60s) - please check your internet connection');
@@ -76,43 +91,49 @@ class RagChatService {
           throw Exception('RAG API returned invalid JSON response: $e');
         }
 
-        // Handle the actual RAG API response format
+        // Handle the response format based on API version
         String content;
         if (decodedResponse is Map<String, dynamic>) {
           final responseData = decodedResponse as Map<String, dynamic>;
-          // Handle the actual RAG API format: {answer: "...", sources: [...]}
-          if (responseData.containsKey('answer')) {
-            content = responseData['answer'] as String;
 
-            // Optionally include source information
-            if (responseData.containsKey('sources') &&
-                responseData['sources'] is List &&
-                (responseData['sources'] as List).isNotEmpty) {
-              content += '\n\n📚 Sources:';
-              final sources = responseData['sources'] as List;
-              for (int i = 0; i < sources.length && i < 3; i++) {
-                final source = sources[i];
-                if (source is Map<String, dynamic> &&
-                    source.containsKey('content')) {
-                  final sourceContent = source['content'] as String;
-                  final shortContent = sourceContent.length > 100
-                      ? '${sourceContent.substring(0, 100)}...'
-                      : sourceContent;
-                  content += '\n• $shortContent';
+          if (isNewApi) {
+            // New API format: {response_text: "..."}
+            content = responseData['response_text'] ?? responseData.toString();
+          } else {
+            // Old API format: {answer: "...", sources: [...]}
+            if (responseData.containsKey('answer')) {
+              content = responseData['answer'] as String;
 
-                  if (source.containsKey('url') && source['url'] != null) {
-                    content += '\n  🔗 ${source['url']}';
+              // Optionally include source information for old API
+              if (responseData.containsKey('sources') &&
+                  responseData['sources'] is List &&
+                  (responseData['sources'] as List).isNotEmpty) {
+                content += '\n\n📚 Sources:';
+                final sources = responseData['sources'] as List;
+                for (int i = 0; i < sources.length && i < 3; i++) {
+                  final source = sources[i];
+                  if (source is Map<String, dynamic> &&
+                      source.containsKey('content')) {
+                    final sourceContent = source['content'] as String;
+                    final shortContent = sourceContent.length > 100
+                        ? '${sourceContent.substring(0, 100)}...'
+                        : sourceContent;
+                    content += '\n• $shortContent';
+
+                    if (source.containsKey('url') && source['url'] != null) {
+                      content += '\n  🔗 ${source['url']}';
+                    }
                   }
                 }
               }
+            } else {
+              // Fallback to other possible response fields
+              content = responseData['content'] ??
+                  responseData['message'] ??
+                  responseData['response'] ??
+                  responseData['text'] ??
+                  responseData.toString();
             }
-          } else {
-            // Fallback to original format handling
-            content = responseData['content'] ??
-                responseData['message'] ??
-                responseData['response'] ??
-                responseData['text'] ??
-                responseData.toString();
           }
         } else if (decodedResponse is String) {
           content = decodedResponse;
@@ -163,7 +184,29 @@ class RagChatService {
     try {
       _logger.d('Starting streaming request to RAG API');
 
-      // Prepare messages
+      final baseUrl = EnvService.selectedRagApiBaseUrl;
+      final isNewApi = EnvService.useNewRagApi;
+
+      // Note: New API might not support streaming, so we'll fall back to regular request
+      if (isNewApi) {
+        _logger.w(
+            'New RAG API may not support streaming, falling back to regular request');
+        try {
+          final response = await sendMessage(
+            message: message,
+            conversationHistory: conversationHistory,
+            model: model,
+          );
+          yield response;
+          return;
+        } catch (e) {
+          _logger.e('Failed to get response from new API: $e');
+          yield 'Sorry, I encountered an error while processing your request. Please try again.';
+          return;
+        }
+      }
+
+      // Old API streaming logic
       final messages = <Map<String, dynamic>>[];
 
       // Add conversation history
@@ -185,7 +228,7 @@ class RagChatService {
         'stream': true, // Enable streaming
       };
 
-      final request = http.Request('POST', Uri.parse(_baseUrl));
+      final request = http.Request('POST', Uri.parse(baseUrl));
       request.headers.addAll({
         'Content-Type': 'application/json',
         'Accept': 'text/plain',
@@ -247,11 +290,15 @@ class RagChatService {
 
   /// Detailed connectivity test with diagnostic information
   Future<Map<String, dynamic>> testConnectionDetailed() async {
+    final baseUrl = EnvService.selectedRagApiBaseUrl;
+    final isNewApi = EnvService.useNewRagApi;
+
     final result = <String, dynamic>{
       'success': false,
       'response_time_ms': 0,
       'error': null,
-      'endpoint': _baseUrl,
+      'endpoint': baseUrl,
+      'api_version': isNewApi ? 'new' : 'old',
       'cors_test': false,
       'network_test': false,
     };
@@ -262,25 +309,31 @@ class RagChatService {
       // First, try a simple network test
       result['network_test'] = await _testNetworkConnectivity();
 
-      // Test actual RAG API call
-      final testPayload = {
-        'messages': [
-          {'role': 'user', 'content': 'Connection test'}
-        ]
-      };
+      // Test actual RAG API call with appropriate format
+      Map<String, dynamic> testPayload;
+
+      if (isNewApi) {
+        testPayload = {'question': 'Connection test'};
+      } else {
+        testPayload = {
+          'messages': [
+            {'role': 'user', 'content': 'Connection test'}
+          ]
+        };
+      }
 
       _logger.d('Testing RAG API with payload: ${json.encode(testPayload)}');
 
       final response = await http
           .post(
-            Uri.parse(_baseUrl),
+            Uri.parse(baseUrl),
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
             },
             body: json.encode(testPayload),
           )
-          .timeout(const Duration(seconds: 60)); // Match main method timeout
+          .timeout(const Duration(seconds: 60));
 
       stopwatch.stop();
       result['response_time_ms'] = stopwatch.elapsedMilliseconds;
@@ -292,10 +345,16 @@ class RagChatService {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        if (responseData is Map<String, dynamic> &&
-            responseData.containsKey('answer')) {
-          result['success'] = true;
-          result['sample_response'] = responseData['answer'];
+        if (responseData is Map<String, dynamic>) {
+          if (isNewApi && responseData.containsKey('response_text')) {
+            result['success'] = true;
+            result['sample_response'] = responseData['response_text'];
+          } else if (!isNewApi && responseData.containsKey('answer')) {
+            result['success'] = true;
+            result['sample_response'] = responseData['answer'];
+          } else {
+            result['error'] = 'Response format unexpected: ${response.body}';
+          }
         } else {
           result['error'] = 'Response format unexpected: ${response.body}';
         }
@@ -336,7 +395,7 @@ class RagChatService {
   Future<Map<String, dynamic>> getHealthStatus() async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/health'),
+        Uri.parse('${EnvService.selectedRagApiBaseUrl}/health'),
         headers: {'Accept': 'application/json'},
       );
 
