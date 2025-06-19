@@ -29,10 +29,16 @@
 - Environment configuration documentation should be in `docs/`
 - Never commit actual environment files with sensitive data
 
-## Testing
-- Unit tests in `test/`
+## Testing Organization
+- All test files must be placed in the `test/` directory
+- Unit tests in `test/` (mirroring the `lib/` structure)
 - Integration tests in `test/integration/`
+- Service tests in `test/services/`
 - Widget tests follow Flutter conventions
+- Test files should end with `_test.dart`
+- Never place test files in the root directory or other non-test folders
+- Mock files should be in `test/mocks/`
+- Test utilities and helpers in `test/utils/`
 
 ## Documentation Standards
 - Use clear, descriptive titles
