@@ -97,6 +97,88 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       state = AsyncValue.error(error, stackTrace);
     }
   }
+
+  Future<void> signInWithGoogle({
+    required String idToken,
+    required String accessToken,
+  }) async {
+    state = const AsyncValue.loading();
+
+    try {
+      // Validate that we have both required tokens
+      if (idToken.isEmpty) {
+        throw Exception(
+            'ID Token is required for Google authentication but was not provided. This is a common issue on web - please try using a different browser or clearing your browser cache.');
+      }
+
+      if (accessToken.isEmpty) {
+        throw Exception(
+            'Access Token is required for Google authentication but was not provided.');
+      }
+
+      final response = await SupabaseService.client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
+
+      if (response.user != null) {
+        // Ensure profile exists after successful Google sign in
+        try {
+          await _profileService.ensureUserProfile();
+        } catch (e) {
+          print('Profile creation failed after Google sign in: $e');
+        }
+        state = AsyncValue.data(response.user);
+      } else {
+        throw Exception('Google sign in failed - no user returned');
+      }
+    } catch (error, stackTrace) {
+      print('Google sign in error: $error');
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  Future<void> signUpWithGoogle({
+    required String idToken,
+    required String accessToken,
+  }) async {
+    state = const AsyncValue.loading();
+
+    try {
+      // Validate that we have both required tokens
+      if (idToken.isEmpty) {
+        throw Exception(
+            'ID Token is required for Google authentication but was not provided. This is a common issue on web - please try using a different browser or clearing your browser cache.');
+      }
+
+      if (accessToken.isEmpty) {
+        throw Exception(
+            'Access Token is required for Google authentication but was not provided.');
+      }
+
+      final response = await SupabaseService.client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
+
+      if (response.user != null) {
+        // Ensure profile exists after successful Google sign up
+        try {
+          await _profileService.ensureUserProfile();
+        } catch (e) {
+          print('Profile creation failed after Google sign up: $e');
+        }
+        state = AsyncValue.data(response.user);
+      } else {
+        throw Exception('Google sign up failed - no user returned');
+      }
+    } catch (error, stackTrace) {
+      print('Google sign up error: $error');
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
 }
 
 // Auth provider

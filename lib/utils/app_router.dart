@@ -24,7 +24,8 @@ class AppRouter {
         GoRoute(
           path: '/',
           name: 'landing',
-          builder: (context, state) => const LandingScreen(),
+          builder: (context, state) =>
+              LandingScreen(onboardingService: onboardingService),
         ),
 
         // Login Screen
