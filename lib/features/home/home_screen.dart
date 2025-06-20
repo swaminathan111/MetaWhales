@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
+import '../auth/widgets/user_avatar.dart';
+import '../auth/services/profile_service.dart';
 import '../chat/services/speech_service.dart';
 import '../chat/services/openrouter_service.dart';
 import '../chat/services/chat_persistence_service.dart';
@@ -39,7 +41,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
-    final userName = currentUser?.email?.split('@')[0] ?? 'John';
+    final profileAsync = ref.watch(currentUserProfileProvider);
+
+    // Get display name from profile with fallbacks
+    final userName = profileAsync.when(
+      data: (profile) =>
+          profile?['full_name'] as String? ??
+          currentUser?.email?.split('@')[0] ??
+          'User',
+      loading: () => currentUser?.email?.split('@')[0] ?? 'User',
+      error: (_, __) => currentUser?.email?.split('@')[0] ?? 'User',
+    );
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -48,17 +60,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         elevation: 0,
         leading: const Padding(
           padding: EdgeInsets.all(8.0),
-          child: CircleAvatar(
-            backgroundImage: NetworkImage(
-              'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-            ),
+          child: UserAvatar(
+            size: 40,
+            showBorder: true,
+            borderColor: Colors.blue,
           ),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Welcome, ${userName.split('.')[0]}',
+              'Welcome, ${userName.split(' ')[0].split('.')[0]}',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,

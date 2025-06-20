@@ -136,10 +136,14 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
   Future<void> signInWithGoogle({
     required String idToken,
     required String accessToken,
+    String? photoUrl,
+    String? displayName,
   }) async {
     AppLogger.info('Starting Google sign in', null, null, {
       'hasIdToken': idToken.isNotEmpty,
       'hasAccessToken': accessToken.isNotEmpty,
+      'hasPhotoUrl': photoUrl != null,
+      'hasDisplayName': displayName != null,
     });
 
     state = const AsyncValue.loading();
@@ -166,11 +170,16 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
         AppLogger.info('Google sign in successful', null, null, {
           'userId': response.user!.id,
           'email': response.user!.email,
+          'photoUrl': photoUrl,
+          'displayName': displayName,
         });
 
         // Ensure profile exists after successful Google sign in
         try {
-          await _profileService.ensureUserProfile();
+          await _profileService.ensureUserProfile(
+            googlePhotoUrl: photoUrl,
+            googleDisplayName: displayName,
+          );
         } catch (e) {
           AppLogger.warning(
               'Profile creation failed after Google sign in', null, null, {
@@ -191,6 +200,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
   Future<void> signUpWithGoogle({
     required String idToken,
     required String accessToken,
+    String? photoUrl,
+    String? displayName,
   }) async {
     state = const AsyncValue.loading();
 
@@ -215,9 +226,16 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       if (response.user != null) {
         // Ensure profile exists after successful Google sign up
         try {
-          await _profileService.ensureUserProfile();
+          await _profileService.ensureUserProfile(
+            googlePhotoUrl: photoUrl,
+            googleDisplayName: displayName,
+          );
         } catch (e) {
-          print('Profile creation failed after Google sign up: $e');
+          AppLogger.warning(
+              'Profile creation failed after Google sign up', null, null, {
+            'error': e.toString(),
+            'userId': response.user!.id,
+          });
         }
         state = AsyncValue.data(response.user);
       } else {

@@ -1,21 +1,23 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import '../../../core/logging/app_logger.dart';
 
 class ProfileService {
   final SupabaseClient _supabase = Supabase.instance.client;
-  final Logger _logger = Logger();
 
   /// Ensure user profile exists, create if missing
-  Future<void> ensureUserProfile() async {
+  Future<void> ensureUserProfile({
+    String? googlePhotoUrl,
+    String? googleDisplayName,
+  }) async {
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) {
-        _logger.w('No authenticated user found');
+        AppLogger.warning('No authenticated user found');
         return;
       }
 
-      _logger.d('Checking profile for user: ${user.id}');
+      AppLogger.debug('Checking profile for user: ${user.id}');
 
       // Check if profile already exists
       final existingProfile = await _supabase
@@ -25,20 +27,33 @@ class ProfileService {
           .maybeSingle();
 
       if (existingProfile != null) {
-        _logger.d('User profile already exists');
+        AppLogger.debug('User profile already exists');
         return;
       }
 
       // Create new user profile
-      _logger.i('Creating new user profile for: ${user.id}');
+      AppLogger.info('Creating new user profile for: ${user.id}');
+
+      // Determine the best full name to use
+      String fullName = googleDisplayName ??
+          user.userMetadata?['full_name'] ??
+          user.userMetadata?['name'] ??
+          user.email?.split('@')[0] ??
+          'User';
+
+      // Determine the best avatar URL to use
+      String? avatarUrl = googlePhotoUrl ??
+          user.userMetadata?['avatar_url'] ??
+          user.userMetadata?['picture'];
+
+      AppLogger.info(
+          'Profile creation data - userId: ${user.id}, fullName: $fullName, avatarUrl: $avatarUrl, googlePhotoUrl: $googlePhotoUrl, googleDisplayName: $googleDisplayName');
 
       final profileData = {
         'id': user.id,
         'email': user.email,
-        'full_name': user.userMetadata?['full_name'] ??
-            user.email?.split('@')[0] ??
-            'User',
-        'avatar_url': user.userMetadata?['avatar_url'],
+        'full_name': fullName,
+        'avatar_url': avatarUrl,
         'notification_preferences': {
           'push_notifications': true,
           'email_alerts': true,
@@ -57,14 +72,15 @@ class ProfileService {
 
       await _supabase.from('user_profiles').insert(profileData);
 
-      _logger.i('User profile created successfully for: ${user.id}');
+      AppLogger.info('User profile created successfully for: ${user.id}');
     } catch (e) {
-      _logger.e('Failed to ensure user profile: $e');
+      AppLogger.error('Failed to ensure user profile', e, null);
 
       // If it's a unique constraint violation, the profile might already exist
       if (e.toString().contains('duplicate key') ||
           e.toString().contains('unique constraint')) {
-        _logger.i('Profile already exists (unique constraint), continuing...');
+        AppLogger.info(
+            'Profile already exists (unique constraint), continuing...');
         return;
       }
 
@@ -87,7 +103,7 @@ class ProfileService {
 
       return response;
     } catch (e) {
-      _logger.e('Failed to get user profile: $e');
+      AppLogger.error('Failed to get user profile', e, null);
       return null;
     }
   }
@@ -102,9 +118,9 @@ class ProfileService {
 
       await _supabase.from('user_profiles').update(updates).eq('id', user.id);
 
-      _logger.i('User profile updated successfully');
+      AppLogger.info('User profile updated successfully');
     } catch (e) {
-      _logger.e('Failed to update user profile: $e');
+      AppLogger.error('Failed to update user profile', e, null);
       rethrow;
     }
   }
@@ -117,9 +133,9 @@ class ProfileService {
 
       await _supabase.from('user_profiles').delete().eq('id', user.id);
 
-      _logger.i('User profile deleted successfully');
+      AppLogger.info('User profile deleted successfully');
     } catch (e) {
-      _logger.e('Failed to delete user profile: $e');
+      AppLogger.error('Failed to delete user profile', e, null);
       rethrow;
     }
   }
@@ -128,9 +144,9 @@ class ProfileService {
   Future<void> initializeProfile() async {
     try {
       await ensureUserProfile();
-      _logger.i('Profile initialization completed');
+      AppLogger.info('Profile initialization completed');
     } catch (e) {
-      _logger.e('Profile initialization failed: $e');
+      AppLogger.error('Profile initialization failed', e, null);
       // Don't rethrow - app should still work even if profile creation fails
     }
   }

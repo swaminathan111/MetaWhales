@@ -135,6 +135,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         await ref.read(authProvider.notifier).signInWithGoogle(
               idToken: googleAuth.idToken ?? '', // Provide empty string if null
               accessToken: googleAuth.accessToken!,
+              photoUrl: googleUser.photoUrl,
+              displayName: googleUser.displayName,
             );
 
         // OAuth callback listener will handle navigation on successful login

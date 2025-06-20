@@ -70,6 +70,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         await ref.read(authProvider.notifier).signUpWithGoogle(
               idToken: googleAuth.idToken ?? '', // Provide empty string if null
               accessToken: googleAuth.accessToken!,
+              photoUrl: googleUser.photoUrl,
+              displayName: googleUser.displayName,
             );
 
         final authState = ref.read(authProvider);
@@ -217,6 +219,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         await ref.read(authProvider.notifier).signUpWithGoogle(
               idToken: googleAuth.idToken!,
               accessToken: googleAuth.accessToken!,
+              photoUrl: googleUser.photoUrl,
+              displayName: googleUser.displayName,
             );
 
         final authState = ref.read(authProvider);
