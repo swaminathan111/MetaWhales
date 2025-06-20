@@ -666,20 +666,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ],
       ),
-      // Debug FAB for RAG testing (remove in production)
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const RagTestScreen(),
-            ),
-          );
-        },
-        backgroundColor: Colors.orange,
-        child: const Icon(Icons.bug_report, color: Colors.white),
-        tooltip: 'Test RAG API',
-      ),
     );
   }
 
