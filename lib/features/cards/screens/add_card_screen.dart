@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/bank_data.dart';
 import '../models/card_info.dart';
-import '../providers/cards_provider.dart';
+import '../providers/card_provider.dart';
+import '../../../core/logging/app_logger.dart';
 
 class AddCardScreen extends ConsumerStatefulWidget {
   final VoidCallback? onNext;
@@ -23,6 +24,7 @@ class AddCardScreen extends ConsumerStatefulWidget {
 class _AddCardScreenState extends ConsumerState<AddCardScreen> {
   String? selectedBank;
   String? selectedCard;
+  bool _isLoading = false;
 
   void _showBankSelection() {
     showModalBottomSheet(
@@ -153,31 +155,149 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
     );
   }
 
-  void _addCard() {
-    if (selectedBank != null && selectedCard != null) {
-      final cardInfo = CardInfo(
-        id: DateTime.now().toString(),
-        bank: selectedBank!,
-        cardType: selectedCard!,
-        gradientColors: [
-          const Color(0xFF4285F4),
-          const Color(0xFF2962FF),
-        ],
-      );
+  Future<void> _addCard() async {
+    if (selectedBank == null || selectedCard == null) return;
 
-      ref.read(cardsProvider.notifier).addCard(cardInfo);
+    setState(() {
+      _isLoading = true;
+    });
 
-      if (widget.isOnboarding && widget.onNext != null) {
-        widget.onNext!();
+    try {
+      AppLogger.info('User attempting to add card', null, null, {
+        'bank': selectedBank,
+        'cardType': selectedCard,
+        'isOnboarding': widget.isOnboarding,
+      });
+
+      // Show loading dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Adding your card...'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
       }
 
-      widget.onCardAdded?.call();
+      // Add card using the new provider method
+      final success = await ref.read(cardsProvider.notifier).addCard(
+            cardName: selectedCard!,
+            bankName: selectedBank!,
+            cardType: selectedCard!,
+            // We can add more fields later when we have a more detailed form
+          );
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (success) {
+        AppLogger.info('Card added successfully', null, null, {
+          'bank': selectedBank,
+          'cardType': selectedCard,
+        });
+
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text('$selectedCard from $selectedBank added successfully!'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+
+        // Reset form
+        setState(() {
+          selectedBank = null;
+          selectedCard = null;
+        });
+
+        // Handle navigation
+        if (widget.isOnboarding && widget.onNext != null) {
+          widget.onNext!();
+        }
+
+        widget.onCardAdded?.call();
+      } else {
+        AppLogger.error('Failed to add card', null, null, {
+          'bank': selectedBank,
+          'cardType': selectedCard,
+        });
+
+        // Show error message with retry option
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Error Adding Card'),
+              content: const Text(
+                'We couldn\'t add your card right now. Please check your internet connection and try again.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _addCard(); // Retry
+                  },
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } catch (error, stackTrace) {
+      AppLogger.error('Exception while adding card', error, stackTrace);
+
+      // Close loading dialog if still open
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('An unexpected error occurred. Please try again.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final cards = ref.watch(cardsProvider);
+    final isProviderLoading = ref.read(cardsProvider.notifier).isLoading;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -212,11 +332,11 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
               ),
               const SizedBox(height: 8),
               InkWell(
-                onTap: _showBankSelection,
+                onTap: _isLoading ? null : _showBankSelection,
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: _isLoading ? Colors.grey[200] : Colors.grey[100],
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -230,9 +350,9 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
                         ),
                       ),
                       const Spacer(),
-                      const Icon(
+                      Icon(
                         Icons.chevron_right,
-                        color: Colors.grey,
+                        color: _isLoading ? Colors.grey[400] : Colors.grey,
                       ),
                     ],
                   ),
@@ -248,11 +368,15 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
               ),
               const SizedBox(height: 8),
               InkWell(
-                onTap: _showCardSelection,
+                onTap: (_isLoading || selectedBank == null)
+                    ? null
+                    : _showCardSelection,
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: (_isLoading || selectedBank == null)
+                        ? Colors.grey[200]
+                        : Colors.grey[100],
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -266,9 +390,11 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
                         ),
                       ),
                       const Spacer(),
-                      const Icon(
+                      Icon(
                         Icons.chevron_right,
-                        color: Colors.grey,
+                        color: (_isLoading || selectedBank == null)
+                            ? Colors.grey[400]
+                            : Colors.grey,
                       ),
                     ],
                   ),
@@ -278,7 +404,10 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: selectedBank != null && selectedCard != null
+                  onPressed: (selectedBank != null &&
+                          selectedCard != null &&
+                          !_isLoading &&
+                          !isProviderLoading)
                       ? _addCard
                       : null,
                   style: ElevatedButton.styleFrom(
@@ -290,93 +419,126 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
                     ),
                     disabledBackgroundColor: Colors.grey[300],
                   ),
-                  child: const Text(
-                    'Add Card',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Add Card',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
-              if (cards.isEmpty) ...[
-                const SizedBox(height: 32),
+              const SizedBox(height: 24),
+              if (cards.isNotEmpty) ...[
                 const Text(
-                  'Your cards',
+                  'Your Cards',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.grey[300]!,
-                      style: BorderStyle.solid,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.credit_card,
-                        size: 48,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'No cards added yet',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 16,
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: cards.length,
+                    itemBuilder: (context, index) {
+                      final card = cards[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: card.gradientColors,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              const Spacer(),
-              if (widget.isOnboarding) ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: widget.onNext,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4285F4),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Continue',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: TextButton(
-                    onPressed: widget.onNext,
-                    child: const Text('Skip for now'),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  card.icon,
+                                  color: Colors.white,
+                                  size: 32,
+                                ),
+                                const Spacer(),
+                                if (card.isPrimary)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Text(
+                                      'PRIMARY',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              card.bank,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              card.cardType,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 14,
+                              ),
+                            ),
+                            if (card.lastFourDigits != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                '•••• •••• •••• ${card.lastFourDigits}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
               const SizedBox(height: 16),
               Center(
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.lock,
+                      Icons.lock_outline,
                       size: 16,
                       color: Colors.grey[600],
                     ),
@@ -384,8 +546,8 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
                     Text(
                       'Your card details are encrypted and secure',
                       style: TextStyle(
-                        fontSize: 14,
                         color: Colors.grey[600],
+                        fontSize: 14,
                       ),
                     ),
                   ],
