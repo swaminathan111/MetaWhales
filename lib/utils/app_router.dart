@@ -1,17 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/signup_screen.dart';
 import '../features/landing/screens/landing_screen.dart';
 import '../features/splash/splash_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/onboarding/screens/onboarding_screen.dart';
+import '../features/auth/auth_provider.dart';
 import '../services/onboarding_service.dart';
+import '../services/supabase_service.dart';
+import '../core/logging/app_logger.dart';
+
+// Auth state notifier for router refresh
+class _AuthStateNotifier extends ChangeNotifier {
+  final WidgetRef _ref;
+
+  _AuthStateNotifier(this._ref) {
+    // Listen to auth state changes and notify router to refresh
+    _ref.listen(authProvider, (previous, next) {
+      notifyListeners();
+    });
+  }
+}
 
 class AppRouter {
-  static GoRouter getRouter(OnboardingService onboardingService) {
+  static GoRouter getRouter(
+      OnboardingService onboardingService, WidgetRef ref) {
     return GoRouter(
       initialLocation: '/splash',
+      refreshListenable: _AuthStateNotifier(ref),
+      redirect: (context, state) {
+        // Get current auth state
+        final authState = ref.read(authProvider);
+        final isAuthenticated = authState.hasValue && authState.value != null;
+        final currentLocation = state.matchedLocation;
+
+        AppLogger.debug('Router redirect check', null, null, {
+          'currentLocation': currentLocation,
+          'isAuthenticated': isAuthenticated,
+          'userId': isAuthenticated ? authState.value!.id : null,
+        });
+
+        // Skip redirects for splash screen - let it handle its own navigation
+        if (currentLocation == '/splash') {
+          return null;
+        }
+
+        // If user is authenticated and trying to access login/signup/landing, redirect to home
+        if (isAuthenticated &&
+            (currentLocation == '/login' ||
+                currentLocation == '/signup' ||
+                currentLocation == '/')) {
+          AppLogger.info('Redirecting authenticated user to home', null, null, {
+            'fromLocation': currentLocation,
+            'userId': authState.value!.id,
+          });
+          return '/home';
+        }
+
+        // If user is not authenticated and trying to access protected routes, redirect to login
+        if (!isAuthenticated &&
+            (currentLocation == '/home' || currentLocation == '/onboarding')) {
+          AppLogger.info(
+              'Redirecting unauthenticated user to login', null, null, {
+            'fromLocation': currentLocation,
+          });
+          return '/login';
+        }
+
+        // No redirect needed
+        return null;
+      },
       routes: [
         // Splash Screen
         GoRoute(

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/supabase_service.dart';
 import 'services/profile_service.dart';
+import '../../core/logging/app_logger.dart';
 
 // Auth state notifier
 class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
@@ -15,14 +16,29 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     // Listen to auth state changes
     SupabaseService.client.auth.onAuthStateChange.listen((data) async {
       final user = data.session?.user;
+      final event = data.event;
+
+      AppLogger.info('Auth state change detected', null, null, {
+        'event': event.toString(),
+        'hasUser': user != null,
+        'userId': user?.id,
+        'email': user?.email,
+      });
 
       // If user signed in, ensure profile exists
       if (user != null) {
         try {
           await _profileService.ensureUserProfile();
+          AppLogger.info(
+              'User profile ensured after auth state change', null, null, {
+            'userId': user.id,
+          });
         } catch (e) {
           // Log but don't fail auth - profile can be created later
-          print('Profile creation failed during auth: $e');
+          AppLogger.warning('Profile creation failed during auth', null, null, {
+            'error': e.toString(),
+            'userId': user.id,
+          });
         }
       }
 
@@ -33,6 +49,11 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     final currentUser = SupabaseService.currentUser;
     state = AsyncValue.data(currentUser);
 
+    AppLogger.info('Auth provider initialized', null, null, {
+      'hasCurrentUser': currentUser != null,
+      'userId': currentUser?.id,
+    });
+
     // Ensure profile exists for current user on app start
     if (currentUser != null) {
       _profileService.initializeProfile();
@@ -40,6 +61,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
   }
 
   Future<void> signIn(String email, String password) async {
+    AppLogger.info('Starting email sign in', null, null, {
+      'email': email,
+    });
+
     state = const AsyncValue.loading();
 
     try {
@@ -49,17 +74,27 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       );
 
       if (response.user != null) {
+        AppLogger.info('Email sign in successful', null, null, {
+          'userId': response.user!.id,
+          'email': response.user!.email,
+        });
+
         // Ensure profile exists after successful sign in
         try {
           await _profileService.ensureUserProfile();
         } catch (e) {
-          print('Profile creation failed after sign in: $e');
+          AppLogger.warning(
+              'Profile creation failed after sign in', null, null, {
+            'error': e.toString(),
+            'userId': response.user!.id,
+          });
         }
         state = AsyncValue.data(response.user);
       } else {
         throw Exception('Login failed');
       }
     } catch (error, stackTrace) {
+      AppLogger.error('Email sign in failed', error, stackTrace);
       state = AsyncValue.error(error, stackTrace);
     }
   }
@@ -102,6 +137,11 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     required String idToken,
     required String accessToken,
   }) async {
+    AppLogger.info('Starting Google sign in', null, null, {
+      'hasIdToken': idToken.isNotEmpty,
+      'hasAccessToken': accessToken.isNotEmpty,
+    });
+
     state = const AsyncValue.loading();
 
     try {
@@ -123,18 +163,27 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       );
 
       if (response.user != null) {
+        AppLogger.info('Google sign in successful', null, null, {
+          'userId': response.user!.id,
+          'email': response.user!.email,
+        });
+
         // Ensure profile exists after successful Google sign in
         try {
           await _profileService.ensureUserProfile();
         } catch (e) {
-          print('Profile creation failed after Google sign in: $e');
+          AppLogger.warning(
+              'Profile creation failed after Google sign in', null, null, {
+            'error': e.toString(),
+            'userId': response.user!.id,
+          });
         }
         state = AsyncValue.data(response.user);
       } else {
         throw Exception('Google sign in failed - no user returned');
       }
     } catch (error, stackTrace) {
-      print('Google sign in error: $error');
+      AppLogger.error('Google sign in failed', error, stackTrace);
       state = AsyncValue.error(error, stackTrace);
     }
   }

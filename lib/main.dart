@@ -45,7 +45,7 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   final OnboardingService onboardingService;
 
   const MyApp({
@@ -54,14 +54,14 @@ class MyApp extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
       title: 'CardSense',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      routerConfig: AppRouter.getRouter(onboardingService),
+      routerConfig: AppRouter.getRouter(onboardingService, ref),
     );
   }
 }

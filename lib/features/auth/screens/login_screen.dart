@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:html' as html show window;
 import '../../../services/onboarding_service.dart';
 import '../auth_provider.dart';
 import '../services/google_auth_service.dart';
@@ -30,6 +31,78 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoading = false;
 
   final GoogleAuthService _googleAuthService = GoogleAuthService();
+
+  @override
+  void initState() {
+    super.initState();
+    _listenToAuthChanges();
+  }
+
+  void _listenToAuthChanges() {
+    // ESSENTIAL: Listen for OAuth callback authentication (primary fix for your issue)
+    SupabaseService.client.auth.onAuthStateChange.listen((data) {
+      if (data.session != null && mounted) {
+        AppLogger.info(
+            'OAuth callback detected on login screen - user authenticated',
+            null,
+            null, {
+          'userId': data.session!.user.id,
+          'email': data.session!.user.email,
+        });
+        widget.onboardingService.setNewUser(false);
+        if (mounted) {
+          // Clean up OAuth callback parameters from URL before navigating
+          _cleanUpOAuthUrl();
+          context.go('/home');
+        }
+      }
+    });
+
+    // Check current auth state - if user is already authenticated, redirect immediately
+    // Note: Router guards also handle this, but this provides immediate feedback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final currentAuthState = ref.read(authProvider);
+      if (currentAuthState.hasValue && currentAuthState.value != null) {
+        AppLogger.info(
+            'User already authenticated on login screen load', null, null, {
+          'userId': currentAuthState.value!.id,
+          'email': currentAuthState.value!.email,
+        });
+        widget.onboardingService.setNewUser(false);
+        if (mounted) {
+          context.go('/home');
+        }
+      }
+    });
+  }
+
+  /// Clean up OAuth callback parameters from URL
+  void _cleanUpOAuthUrl() {
+    if (kIsWeb) {
+      // For web, clean up the URL by replacing the current history entry
+      // This removes OAuth callback parameters like ?code=... from the URL
+      try {
+        final uri = Uri.parse(html.window.location.href);
+        final cleanUri = Uri(
+          scheme: uri.scheme,
+          host: uri.host,
+          port: uri.port,
+          path: uri.path,
+          fragment: uri.fragment, // Keep the route fragment (#/home)
+          // Remove query parameters (code, state, etc.)
+        );
+        html.window.history.replaceState(null, '', cleanUri.toString());
+        AppLogger.debug('OAuth callback URL cleaned up', null, null, {
+          'originalUrl': uri.toString(),
+          'cleanedUrl': cleanUri.toString(),
+        });
+      } catch (e) {
+        AppLogger.warning('Failed to clean up OAuth URL', null, null, {
+          'error': e.toString(),
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -64,14 +137,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               accessToken: googleAuth.accessToken!,
             );
 
+        // OAuth callback listener will handle navigation on successful login
+        // Just check for immediate errors
         final authState = ref.read(authProvider);
-
-        if (authState.hasValue && authState.value != null) {
-          widget.onboardingService.setNewUser(false);
-          if (mounted) {
-            context.go('/home');
-          }
-        } else if (authState.hasError) {
+        if (authState.hasError) {
+          AppLogger.error('Google login failed with auth state error',
+              authState.error, null);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -254,15 +325,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _passwordController.text,
           );
 
-      // Check if login was successful
+      // Auth state changes will trigger navigation via router guards or auth listeners
+      // Just check for immediate errors
       final authState = ref.read(authProvider);
-
-      if (authState.hasValue && authState.value != null) {
-        widget.onboardingService.setNewUser(false);
-        if (mounted) {
-          context.go('/home');
-        }
-      } else if (authState.hasError) {
+      if (authState.hasError) {
+        AppLogger.error(
+            'Email login failed with auth state error', authState.error, null);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
