@@ -40,6 +40,112 @@
 - Mock files should be in `test/mocks/`
 - Test utilities and helpers in `test/utils/`
 
+## Logging Best Practices
+
+### Logging Structure
+- Use the centralized logging system in `lib/core/logging/`
+- Import `app_logger.dart` for general application logging
+- Import `api_logger.dart` for API-specific logging
+- Import `performance_monitor.dart` for performance tracking
+
+### Log Levels and Usage
+- **ERROR**: System errors, exceptions, critical failures that require immediate attention
+  ```dart
+  AppLogger.error('Database connection failed', error: e, stackTrace: stackTrace);
+  ```
+- **WARNING**: Potential issues, deprecated usage, recoverable errors
+  ```dart
+  AppLogger.warning('API rate limit approaching', details: {'remaining': remaining});
+  ```
+- **INFO**: Important business logic events, user actions, system state changes
+  ```dart
+  AppLogger.info('User completed onboarding', userId: userId);
+  ```
+- **DEBUG**: Detailed diagnostic information, variable states, flow control
+  ```dart
+  AppLogger.debug('Processing payment', details: {'amount': amount, 'cardId': cardId});
+  ```
+
+### Logging Standards
+- Always include relevant context (userId, sessionId, transactionId, etc.)
+- Use structured logging with key-value pairs instead of string concatenation
+- Log entry and exit points for critical business functions
+- Include performance metrics for database queries and API calls
+- Never log sensitive data (passwords, tokens, full credit card numbers, PII)
+
+### API and Service Logging
+- Log all API requests/responses using `ApiLogger`
+- Include request ID, endpoint, method, status code, and response time
+- Log authentication attempts and failures
+- Track rate limiting and quota usage
+- Monitor third-party service integrations (OpenRouter, Supabase, Google Auth)
+
+### Error Handling and Logging
+- Always log exceptions with full context and stack traces
+- Include user-friendly error messages separate from technical details
+- Log recovery attempts and their outcomes
+- Track error patterns for debugging and monitoring
+
+### Performance Logging
+- Use `PerformanceMonitor` for tracking app performance
+- Log database query execution times
+- Monitor memory usage and app startup times
+- Track user interaction response times
+- Log background task completion times
+
+### User Activity Logging
+- Log important user actions (login, logout, profile updates, transactions)
+- Track feature usage for analytics (chat interactions, card management, spending analysis)
+- Log onboarding progress and completion
+- Monitor user engagement patterns
+
+### Security and Privacy Logging
+- Log authentication events (success/failure, token refresh)
+- Track permission requests and grants
+- Log data access patterns for audit trails
+- Monitor suspicious activities or potential security threats
+- Ensure compliance with privacy regulations (anonymize where necessary)
+
+### Development vs Production Logging
+- Use DEBUG level liberally in development
+- Limit production logs to INFO, WARNING, and ERROR levels
+- Configure log retention policies for production
+- Implement log rotation and archival strategies
+- Use remote logging services for production monitoring
+
+### Logging Format Standards
+```dart
+// Good: Structured logging with context
+AppLogger.info('Payment processed successfully', 
+  userId: user.id,
+  transactionId: transaction.id,
+  amount: transaction.amount,
+  cardType: card.type,
+  processingTime: stopwatch.elapsedMilliseconds
+);
+
+// Bad: String concatenation without context
+AppLogger.info('Payment of ${amount} processed for user ${userId}');
+```
+
+### Async Operations Logging
+- Log start and completion of async operations
+- Include correlation IDs for tracking across async boundaries
+- Log timeout scenarios and retry attempts
+- Track concurrent operation performance
+
+### Database Operation Logging
+- Log all database mutations (INSERT, UPDATE, DELETE)
+- Include query execution times and affected row counts
+- Log connection pool status and database health
+- Track migration execution and rollback events
+
+### Testing and Logging
+- Use mock loggers in unit tests
+- Verify critical events are logged in integration tests
+- Test log output in different scenarios (success, failure, edge cases)
+- Ensure log levels work correctly across environments
+
 ## Documentation Standards
 - Use clear, descriptive titles
 - Include table of contents for long documents
