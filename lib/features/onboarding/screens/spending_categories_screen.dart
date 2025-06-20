@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/user_preferences.dart';
 
-class SpendingCategoriesScreen extends StatefulWidget {
+class SpendingCategoriesScreen extends ConsumerStatefulWidget {
   final VoidCallback onNext;
 
   const SpendingCategoriesScreen({
@@ -9,11 +11,12 @@ class SpendingCategoriesScreen extends StatefulWidget {
   });
 
   @override
-  State<SpendingCategoriesScreen> createState() =>
+  ConsumerState<SpendingCategoriesScreen> createState() =>
       _SpendingCategoriesScreenState();
 }
 
-class _SpendingCategoriesScreenState extends State<SpendingCategoriesScreen> {
+class _SpendingCategoriesScreenState
+    extends ConsumerState<SpendingCategoriesScreen> {
   final Set<String> _selectedCategories = {};
   final int _maxSelections = 3;
 
@@ -63,6 +66,23 @@ class _SpendingCategoriesScreenState extends State<SpendingCategoriesScreen> {
       } else if (_selectedCategories.length < _maxSelections) {
         _selectedCategories.add(category);
       }
+    });
+
+    // Save to UserPreferences provider
+    ref
+        .read(userPreferencesProvider.notifier)
+        .setSelectedCategories(_selectedCategories.toList());
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Load existing categories from preferences
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final preferences = ref.read(userPreferencesProvider);
+      setState(() {
+        _selectedCategories.addAll(preferences.selectedCategories);
+      });
     });
   }
 

@@ -5,12 +5,14 @@ class UserPreferences {
   final bool? isOpenToNewCard;
   final String? additionalInfo;
   final List<String> selectedOptimizations;
+  final List<String> selectedCategories;
 
   UserPreferences({
     this.monthlySpending,
     this.isOpenToNewCard,
     this.additionalInfo,
     this.selectedOptimizations = const [],
+    this.selectedCategories = const [],
   });
 
   UserPreferences copyWith({
@@ -18,6 +20,7 @@ class UserPreferences {
     bool? isOpenToNewCard,
     String? additionalInfo,
     List<String>? selectedOptimizations,
+    List<String>? selectedCategories,
   }) {
     return UserPreferences(
       monthlySpending: monthlySpending ?? this.monthlySpending,
@@ -25,6 +28,7 @@ class UserPreferences {
       additionalInfo: additionalInfo ?? this.additionalInfo,
       selectedOptimizations:
           selectedOptimizations ?? this.selectedOptimizations,
+      selectedCategories: selectedCategories ?? this.selectedCategories,
     );
   }
 }
@@ -57,6 +61,10 @@ class UserPreferencesNotifier extends StateNotifier<UserPreferences> {
       currentOptimizations.add(optimization);
     }
     state = state.copyWith(selectedOptimizations: currentOptimizations);
+  }
+
+  void setSelectedCategories(List<String> categories) {
+    state = state.copyWith(selectedCategories: categories);
   }
 
   void clearPreferences() {

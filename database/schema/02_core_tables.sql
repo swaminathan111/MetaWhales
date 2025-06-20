@@ -45,6 +45,10 @@ CREATE TABLE user_profiles (
     onboarding_completed_at TIMESTAMP WITH TIME ZONE,
     selected_optimizations TEXT[] DEFAULT '{}',
     selected_spending_categories TEXT[] DEFAULT '{}',
+    -- Add missing onboarding fields
+    monthly_spending_range VARCHAR(20), -- e.g., '₹10-30k'
+    is_open_to_new_card BOOLEAN,
+    onboarding_additional_info TEXT,
     preferred_language VARCHAR(10) DEFAULT 'en',
     
     -- App settings and preferences

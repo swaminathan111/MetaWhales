@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'add_card_screen.dart';
 import 'optimization_screen.dart';
 import 'spending_categories_screen.dart';
 import 'spending_screen.dart';
 import 'preferences_screen.dart';
 import '../models/user_preferences.dart';
+import '../../../core/logging/app_logger.dart';
+import '../../../services/onboarding_service.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -33,9 +36,115 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      // Save preferences and complete onboarding
+      // Save onboarding data to database
+      _saveOnboardingData();
+    }
+  }
+
+  void _saveOnboardingData() async {
+    try {
+      final preferences = ref.read(userPreferencesProvider);
+
+      // Validate that we have all required data
+      if (preferences.monthlySpending == null) {
+        throw Exception('Monthly spending range is required');
+      }
+      if (preferences.selectedOptimizations.isEmpty) {
+        throw Exception('At least one optimization preference is required');
+      }
+      if (preferences.selectedCategories.isEmpty) {
+        throw Exception('At least one spending category is required');
+      }
+      if (preferences.isOpenToNewCard == null) {
+        throw Exception('New card preference is required');
+      }
+
+      AppLogger.info('Saving onboarding data', null, null, {
+        'monthlySpending': preferences.monthlySpending,
+        'optimizationsCount': preferences.selectedOptimizations.length,
+        'categoriesCount': preferences.selectedCategories.length,
+        'isOpenToNewCard': preferences.isOpenToNewCard,
+      });
+
+      // Show loading dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 16),
+                Text('Saving your preferences...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      // Get OnboardingService instance
+      final prefs = await SharedPreferences.getInstance();
+      final onboardingService = OnboardingService(prefs);
+
+      // Save to database
+      await onboardingService.saveOnboardingData(
+        monthlySpendingRange: preferences.monthlySpending!,
+        selectedOptimizations: preferences.selectedOptimizations,
+        selectedCategories: preferences.selectedCategories,
+        isOpenToNewCard: preferences.isOpenToNewCard!,
+        additionalInfo: preferences.additionalInfo,
+      );
+
+      AppLogger.info('Onboarding data saved successfully to database');
+
+      // Clear local state
       ref.read(userPreferencesProvider.notifier).clearPreferences();
-      context.go('/home');
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Onboarding completed successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Navigate to home after a short delay
+      if (mounted) {
+        await Future.delayed(const Duration(seconds: 1));
+        context.go('/home');
+      }
+    } catch (error) {
+      AppLogger.error('Failed to save onboarding data', error, null);
+
+      // Close loading dialog if open
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      // Show error to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save onboarding data: $error'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _saveOnboardingData(),
+            ),
+          ),
+        );
+      }
     }
   }
 
