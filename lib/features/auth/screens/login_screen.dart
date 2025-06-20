@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:html' as html show window;
 import '../../../services/onboarding_service.dart';
 import '../auth_provider.dart';
 import '../services/google_auth_service.dart';
@@ -51,8 +50,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         });
         widget.onboardingService.setNewUser(false);
         if (mounted) {
-          // Clean up OAuth callback parameters from URL before navigating
-          _cleanUpOAuthUrl();
           context.go('/home');
         }
       }
@@ -74,34 +71,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         }
       }
     });
-  }
-
-  /// Clean up OAuth callback parameters from URL
-  void _cleanUpOAuthUrl() {
-    if (kIsWeb) {
-      // For web, clean up the URL by replacing the current history entry
-      // This removes OAuth callback parameters like ?code=... from the URL
-      try {
-        final uri = Uri.parse(html.window.location.href);
-        final cleanUri = Uri(
-          scheme: uri.scheme,
-          host: uri.host,
-          port: uri.port,
-          path: uri.path,
-          fragment: uri.fragment, // Keep the route fragment (#/home)
-          // Remove query parameters (code, state, etc.)
-        );
-        html.window.history.replaceState(null, '', cleanUri.toString());
-        AppLogger.debug('OAuth callback URL cleaned up', null, null, {
-          'originalUrl': uri.toString(),
-          'cleanedUrl': cleanUri.toString(),
-        });
-      } catch (e) {
-        AppLogger.warning('Failed to clean up OAuth URL', null, null, {
-          'error': e.toString(),
-        });
-      }
-    }
   }
 
   @override

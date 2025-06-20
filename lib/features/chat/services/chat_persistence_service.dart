@@ -312,10 +312,10 @@ class PersistentChatMessagesNotifier extends StateNotifier<List<ChatMessage>> {
       );
 
       if (history.isEmpty) {
-        // Add welcome message if no history
+        // Add personalized welcome message if no history
         state = [
           ChatMessage.assistant(
-            "Hi! I'm CardSense AI, your specialized assistant for Indian credit cards and related financial topics. I can help you with card comparisons, rewards optimization, and credit-related questions. What would you like to know about credit cards?",
+            "Hi! I'm CardSense AI, your personalized assistant for Indian credit cards. I can see your card portfolio and spending preferences to provide tailored recommendations for rewards optimization, card comparisons, and financial planning. What would you like to know about your credit cards?",
           ),
         ];
       } else {
@@ -329,7 +329,7 @@ class PersistentChatMessagesNotifier extends StateNotifier<List<ChatMessage>> {
       // Fallback to default state
       state = [
         ChatMessage.assistant(
-          "Hi! I'm CardSense AI, your specialized assistant for Indian credit cards and related financial topics. I can help you with card comparisons, rewards optimization, and credit-related questions. What would you like to know about credit cards?",
+          "Hi! I'm CardSense AI, your personalized assistant for Indian credit cards. I can see your card portfolio and spending preferences to provide tailored recommendations for rewards optimization, card comparisons, and financial planning. What would you like to know about your credit cards?",
         ),
       ];
     }
@@ -466,7 +466,7 @@ class PersistentChatMessagesNotifier extends StateNotifier<List<ChatMessage>> {
       // Fallback to local clear
       state = [
         ChatMessage.assistant(
-          "Hi! I'm CardSense AI, your specialized assistant for Indian credit cards and related financial topics. I can help you with card comparisons, rewards optimization, and credit-related questions. What would you like to know about credit cards?",
+          "Hi! I'm CardSense AI, your personalized assistant for Indian credit cards. I can see your card portfolio and spending preferences to provide tailored recommendations for rewards optimization, card comparisons, and financial planning. What would you like to know about your credit cards?",
         ),
       ];
     }

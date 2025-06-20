@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:html' as html show window;
 import '../../auth/auth_provider.dart';
 import '../../../services/onboarding_service.dart';
 import '../../../core/logging/app_logger.dart';
@@ -63,11 +62,9 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
 
         if (isNewUser && !hasCompletedOnboarding) {
           AppLogger.auth('New user detected, navigating to onboarding');
-          _cleanUpOAuthUrl();
           context.go('/onboarding');
         } else {
           AppLogger.auth('Existing user detected, navigating to home');
-          _cleanUpOAuthUrl();
           context.go('/home');
         }
       }
@@ -75,33 +72,6 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
       AppLogger.error('Error handling post-OAuth navigation', error, null);
       // Fallback to login if there's an error
       context.go('/login');
-    }
-  }
-
-  /// Clean up OAuth callback parameters from URL
-  void _cleanUpOAuthUrl() {
-    if (kIsWeb) {
-      try {
-        final uri = Uri.parse(html.window.location.href);
-        final cleanUri = Uri(
-          scheme: uri.scheme,
-          host: uri.host,
-          port: uri.port,
-          path: uri.path,
-          fragment: uri.fragment,
-        );
-        html.window.history.replaceState(null, '', cleanUri.toString());
-        AppLogger.debug(
-            'OAuth callback URL cleaned up from landing screen', null, null, {
-          'originalUrl': uri.toString(),
-          'cleanedUrl': cleanUri.toString(),
-        });
-      } catch (e) {
-        AppLogger.warning(
-            'Failed to clean up OAuth URL from landing screen', null, null, {
-          'error': e.toString(),
-        });
-      }
     }
   }
 

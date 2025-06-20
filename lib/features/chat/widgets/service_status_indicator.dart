@@ -35,7 +35,7 @@ class ServiceStatusIndicator extends ConsumerWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                ragAvailable ? 'Enhanced AI' : 'Basic AI',
+                ragAvailable ? 'Personalized AI' : 'Basic AI',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -133,8 +133,8 @@ class ServiceStatusDialog extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _ServiceStatusItem(
-            name: 'Enhanced AI (RAG)',
-            description: 'Specialized credit card knowledge base',
+            name: 'Personalized AI (RAG)',
+            description: 'Tailored responses based on your cards & preferences',
             isAvailable: ragAvailable,
             isPrimary: true,
           ),
@@ -165,7 +165,7 @@ class ServiceStatusDialog extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   ragAvailable
-                      ? 'Enhanced AI with detailed credit card information'
+                      ? 'Personalized AI using your card portfolio and spending patterns'
                       : fallbackAvailable
                           ? 'Backup AI with general responses'
                           : 'No AI services available',

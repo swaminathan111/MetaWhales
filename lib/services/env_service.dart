@@ -5,15 +5,28 @@ class EnvService {
   static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? '';
   static String get environment => dotenv.env['ENVIRONMENT'] ?? 'dev';
 
-  // RAG API Configuration
-  static String get oldRagApiBaseUrl =>
-      dotenv.env['OLD_RAG_API_BASE_URL'] ??
-      'https://cardsense-ai.vercel.app/api/query';
-  static String get newRagApiBaseUrl =>
-      dotenv.env['NEW_RAG_API_BASE_URL'] ??
-      'https://card-sense-ai-rag.vercel.app/chat';
+  // RAG API Configuration - Now fully environment-driven
+  static String get oldRagApiBaseUrl {
+    final url = dotenv.env['OLD_RAG_API_BASE_URL'];
+    if (url == null || url.isEmpty) {
+      throw Exception(
+          'OLD_RAG_API_BASE_URL environment variable is required but not set');
+    }
+    return url;
+  }
+
+  static String get newRagApiBaseUrl {
+    final url = dotenv.env['NEW_RAG_API_BASE_URL'];
+    if (url == null || url.isEmpty) {
+      throw Exception(
+          'NEW_RAG_API_BASE_URL environment variable is required but not set');
+    }
+    return url;
+  }
+
   static bool get useNewRagApi =>
       dotenv.env['USE_NEW_RAG_API']?.toLowerCase() == 'true';
+
   static String get selectedRagApiBaseUrl =>
       useNewRagApi ? newRagApiBaseUrl : oldRagApiBaseUrl;
 

@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'openrouter_service.dart';
 import '../../../services/env_service.dart';
+import '../../../services/user_context_service.dart';
 
 class RagChatService {
   final Logger _logger = Logger();
+  final UserContextService _userContextService = UserContextService();
 
-  /// Send message to RAG API with conversation history
+  /// Send message to RAG API with conversation history and user context
   Future<String> sendMessage({
     required String message,
     required List<ChatMessage> conversationHistory,
@@ -16,23 +18,32 @@ class RagChatService {
   }) async {
     try {
       _logger.d(
-          'Sending message to RAG API: ${message.substring(0, message.length > 50 ? 50 : message.length)}...');
+          'Sending personalized message to RAG API: ${message.substring(0, message.length > 50 ? 50 : message.length)}...');
 
       final baseUrl = EnvService.selectedRagApiBaseUrl;
       final isNewApi = EnvService.useNewRagApi;
 
       _logger.d('Using RAG API: $baseUrl (${isNewApi ? 'new' : 'old'} format)');
 
+      // Get user context for personalization
+      final userContext = await _userContextService.getUserContext();
+      final ragFormattedContext =
+          _userContextService.formatContextForRAG(userContext);
+
+      _logger.i(
+          'Retrieved user context for personalized response: ${userContext.hasCards ? 'Has cards' : 'No cards'}, Context complete: ${userContext.hasCompleteContext}, Cards count: ${userContext.ownedCards.length}');
+
       // Prepare request body based on API version
       Map<String, dynamic> requestBody;
 
       if (isNewApi) {
-        // New API format: simple question field
+        // New API format: question + user_context
         requestBody = {
           'question': message,
+          'user_context': ragFormattedContext,
         };
       } else {
-        // Old API format: messages array with conversation history
+        // Old API format: messages array with conversation history + user_context
         final messages = <Map<String, dynamic>>[];
 
         // Add conversation history
@@ -51,11 +62,15 @@ class RagChatService {
 
         requestBody = {
           'messages': messages,
+          'user_context': ragFormattedContext,
           'stream': false,
         };
       }
 
-      _logger.d('RAG API request: ${json.encode(requestBody)}');
+      final requestJson = json.encode(requestBody);
+      final maxLength = requestJson.length > 500 ? 500 : requestJson.length;
+      _logger.d(
+          'RAG API request with user context: ${requestJson.substring(0, maxLength)}...');
 
       final response = await http
           .post(
@@ -206,7 +221,12 @@ class RagChatService {
         }
       }
 
-      // Old API streaming logic
+      // Old API streaming logic with user context
+      // Get user context for personalization
+      final userContext = await _userContextService.getUserContext();
+      final ragFormattedContext =
+          _userContextService.formatContextForRAG(userContext);
+
       final messages = <Map<String, dynamic>>[];
 
       // Add conversation history
@@ -225,6 +245,7 @@ class RagChatService {
 
       final requestBody = {
         'messages': messages,
+        'user_context': ragFormattedContext,
         'stream': true, // Enable streaming
       };
 
@@ -309,16 +330,24 @@ class RagChatService {
       // First, try a simple network test
       result['network_test'] = await _testNetworkConnectivity();
 
-      // Test actual RAG API call with appropriate format
+      // Test actual RAG API call with user context
+      final userContext = await _userContextService.getUserContext();
+      final ragFormattedContext =
+          _userContextService.formatContextForRAG(userContext);
+
       Map<String, dynamic> testPayload;
 
       if (isNewApi) {
-        testPayload = {'question': 'Connection test'};
+        testPayload = {
+          'question': 'Connection test',
+          'user_context': ragFormattedContext,
+        };
       } else {
         testPayload = {
           'messages': [
             {'role': 'user', 'content': 'Connection test'}
-          ]
+          ],
+          'user_context': ragFormattedContext,
         };
       }
 
@@ -533,6 +562,10 @@ class EnhancedChatService {
 }
 
 // Riverpod providers
+final userContextServiceProvider = Provider<UserContextService>((ref) {
+  return UserContextService();
+});
+
 final ragChatServiceProvider = Provider<RagChatService>((ref) {
   return RagChatService();
 });
@@ -548,4 +581,10 @@ final chatServiceAvailabilityProvider =
     FutureProvider<Map<String, bool>>((ref) {
   final enhancedService = ref.read(enhancedChatServiceProvider);
   return enhancedService.checkServiceAvailability();
+});
+
+// Provider for user context
+final userContextProvider = FutureProvider<UserContext>((ref) {
+  final contextService = ref.read(userContextServiceProvider);
+  return contextService.getUserContext();
 });
