@@ -1,0 +1,12 @@
+{
+  "name": "cardsense-ai",
+  "version": "1.0.0",
+  "description": "CardSense AI - Flutter Web Application",
+  "scripts": {
+    "build": "bash ./deployment/vercel/vercel-build.sh"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 
