@@ -15,14 +15,14 @@
 -- ============================================================================
 
 INSERT INTO card_issuers (id, name, logo_url, website_url, customer_service_phone, is_active) VALUES
-(uuid_generate_v4(), 'Chase', 'https://logos.chase.com/chase-logo.png', 'https://www.chase.com', '1-800-432-3117', true),
-(uuid_generate_v4(), 'American Express', 'https://logos.americanexpress.com/amex-logo.png', 'https://www.americanexpress.com', '1-800-528-4800', true),
-(uuid_generate_v4(), 'Capital One', 'https://logos.capitalone.com/capital-one-logo.png', 'https://www.capitalone.com', '1-800-227-4825', true),
-(uuid_generate_v4(), 'Citi', 'https://logos.citi.com/citi-logo.png', 'https://www.citi.com', '1-800-950-5114', true),
-(uuid_generate_v4(), 'Bank of America', 'https://logos.bankofamerica.com/boa-logo.png', 'https://www.bankofamerica.com', '1-800-732-9194', true),
-(uuid_generate_v4(), 'Wells Fargo', 'https://logos.wellsfargo.com/wf-logo.png', 'https://www.wellsfargo.com', '1-800-869-3557', true),
-(uuid_generate_v4(), 'Discover', 'https://logos.discover.com/discover-logo.png', 'https://www.discover.com', '1-800-347-2683', true),
-(uuid_generate_v4(), 'US Bank', 'https://logos.usbank.com/usbank-logo.png', 'https://www.usbank.com', '1-800-872-2657', true);
+(uuid_generate_v4(), 'HDFC Bank', 'https://logos.hdfcbank.com/hdfc-logo.png', 'https://www.hdfcbank.com', '1800-266-4332', true),
+(uuid_generate_v4(), 'ICICI Bank', 'https://logos.icicibank.com/icici-logo.png', 'https://www.icicibank.com', '1800-102-4242', true),
+(uuid_generate_v4(), 'SBI Cards', 'https://logos.sbicard.com/sbi-logo.png', 'https://www.sbicard.com', '1800-180-1290', true),
+(uuid_generate_v4(), 'Axis Bank', 'https://logos.axisbank.com/axis-logo.png', 'https://www.axisbank.com', '1800-419-5959', true),
+(uuid_generate_v4(), 'Kotak Mahindra Bank', 'https://logos.kotak.com/kotak-logo.png', 'https://www.kotak.com', '1800-274-0110', true),
+(uuid_generate_v4(), 'American Express India', 'https://logos.americanexpress.com/amex-india-logo.png', 'https://www.americanexpress.com/in', '1800-110-024', true),
+(uuid_generate_v4(), 'IndusInd Bank', 'https://logos.indusind.com/indusind-logo.png', 'https://www.indusind.com', '1800-267-7777', true),
+(uuid_generate_v4(), 'Yes Bank', 'https://logos.yesbank.com/yes-logo.png', 'https://www.yesbank.in', '1800-220-0200', true);
 
 -- ============================================================================
 -- CARD CATEGORIES SEED DATA

@@ -20,18 +20,18 @@
 -- ============================================================================
 
 INSERT INTO card_issuers (id, name, logo_url, website_url, customer_service_phone, enabled) VALUES
-(uuid_generate_v4(), 'Chase', 'https://logos.chase.com/chase-logo.png', 'https://www.chase.com', '1-800-432-3117', true),
-(uuid_generate_v4(), 'American Express', 'https://logos.americanexpress.com/amex-logo.png', 'https://www.americanexpress.com', '1-800-528-4800', true),
-(uuid_generate_v4(), 'Capital One', 'https://logos.capitalone.com/capital-one-logo.png', 'https://www.capitalone.com', '1-800-227-4825', true),
-(uuid_generate_v4(), 'Citi', 'https://logos.citi.com/citi-logo.png', 'https://www.citi.com', '1-800-950-5114', true),
-(uuid_generate_v4(), 'Bank of America', 'https://logos.bankofamerica.com/boa-logo.png', 'https://www.bankofamerica.com', '1-800-732-9194', true),
-(uuid_generate_v4(), 'Wells Fargo', 'https://logos.wellsfargo.com/wf-logo.png', 'https://www.wellsfargo.com', '1-800-869-3557', true),
-(uuid_generate_v4(), 'Discover', 'https://logos.discover.com/discover-logo.png', 'https://www.discover.com', '1-800-347-2683', true),
-(uuid_generate_v4(), 'US Bank', 'https://logos.usbank.com/usbank-logo.png', 'https://www.usbank.com', '1-800-872-2657', true),
-(uuid_generate_v4(), 'PNC Bank', 'https://logos.pnc.com/pnc-logo.png', 'https://www.pnc.com', '1-888-762-2265', true),
-(uuid_generate_v4(), 'TD Bank', 'https://logos.td.com/td-logo.png', 'https://www.td.com', '1-888-751-9000', true),
-(uuid_generate_v4(), 'Barclays', 'https://logos.barclays.com/barclays-logo.png', 'https://www.barclays.com', '1-877-523-0478', true),
-(uuid_generate_v4(), 'Synchrony Bank', 'https://logos.synchrony.com/synchrony-logo.png', 'https://www.synchrony.com', '1-866-396-8254', true);
+(uuid_generate_v4(), 'HDFC Bank', 'https://logos.hdfcbank.com/hdfc-logo.png', 'https://www.hdfcbank.com', '1800-266-4332', true),
+(uuid_generate_v4(), 'ICICI Bank', 'https://logos.icicibank.com/icici-logo.png', 'https://www.icicibank.com', '1800-102-4242', true),
+(uuid_generate_v4(), 'SBI Cards', 'https://logos.sbicard.com/sbi-logo.png', 'https://www.sbicard.com', '1800-180-1290', true),
+(uuid_generate_v4(), 'Axis Bank', 'https://logos.axisbank.com/axis-logo.png', 'https://www.axisbank.com', '1800-419-5959', true),
+(uuid_generate_v4(), 'Kotak Mahindra Bank', 'https://logos.kotak.com/kotak-logo.png', 'https://www.kotak.com', '1800-274-0110', true),
+(uuid_generate_v4(), 'American Express India', 'https://logos.americanexpress.com/amex-india-logo.png', 'https://www.americanexpress.com/in', '1800-110-024', true),
+(uuid_generate_v4(), 'IndusInd Bank', 'https://logos.indusind.com/indusind-logo.png', 'https://www.indusind.com', '1800-267-7777', true),
+(uuid_generate_v4(), 'Yes Bank', 'https://logos.yesbank.com/yes-logo.png', 'https://www.yesbank.in', '1800-220-0200', true),
+(uuid_generate_v4(), 'BOB Cards', 'https://logos.bobcards.com/bob-logo.png', 'https://www.bobcards.com', '1800-180-1111', true),
+(uuid_generate_v4(), 'Standard Chartered India', 'https://logos.sc.com/sc-india-logo.png', 'https://www.sc.com/in', '1800-345-3333', true),
+(uuid_generate_v4(), 'RBL Bank', 'https://logos.rblbank.com/rbl-logo.png', 'https://www.rblbank.com', '1800-121-9050', true),
+(uuid_generate_v4(), 'IDFC First Bank', 'https://logos.idfcfirstbank.com/idfc-logo.png', 'https://www.idfcfirstbank.com', '1800-10-888', true);
 
 -- ============================================================================
 -- CARD CATEGORIES REFERENCE DATA
@@ -122,7 +122,7 @@ END $$;
 -- ============================================================================
 
 -- This production seed includes:
--- - 12 major US credit card issuers with contact information
+-- - 12 major Indian credit card issuers with contact information
 -- - 10 comprehensive card categories covering all major types
 -- - 18 detailed spending categories with extensive keyword matching
 -- - All categories include proper icons and colors for UI consistency
