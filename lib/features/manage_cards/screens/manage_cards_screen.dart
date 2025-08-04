@@ -82,6 +82,8 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
     }
   }
 
+
+
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
@@ -157,8 +159,12 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
                 controller: _scrollController,
                 itemCount: _visibleCardCount,
                 itemBuilder: (context, index) {
+                  final card = _cards[index];
+                  
                   return CreditCardWidget(
-                      card: _cards[index], isBest: index == 0);
+                    card: card,
+                    isBest: index == 0,
+                  );
                 },
               ),
             ),
