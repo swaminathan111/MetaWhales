@@ -9,6 +9,7 @@ import 'services/env_service.dart';
 import 'utils/app_router.dart';
 import 'core/config/app_config.dart';
 import 'core/logging/app_logger.dart';
+import 'core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,10 +62,7 @@ class MyApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'CardSense',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.getTheme(),
       routerConfig: AppRouter.getRouter(onboardingService, ref),
     );
   }
