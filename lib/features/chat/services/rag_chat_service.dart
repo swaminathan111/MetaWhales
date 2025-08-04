@@ -21,51 +21,109 @@ class RagChatService {
           'Sending personalized message to RAG API: ${message.substring(0, message.length > 50 ? 50 : message.length)}...');
 
       final baseUrl = EnvService.selectedRagApiBaseUrl;
-      final isNewApi = EnvService.useNewRagApi;
 
-      _logger.d('Using RAG API: $baseUrl (${isNewApi ? 'new' : 'old'} format)');
+      _logger.d('Using RAG API: $baseUrl');
+
+      // 🔍 DEBUG: Log conversation history being sent
+      _logger.i('Conversation history length: ${conversationHistory.length}');
+
+      // 🔧 OPTIMIZATION: Only use last 5 messages for context efficiency
+      final recentHistory = conversationHistory.length > 5
+          ? conversationHistory.sublist(conversationHistory.length - 5)
+          : conversationHistory;
+
+      _logger.i(
+          'Using last ${recentHistory.length} messages for RAG context (limited from ${conversationHistory.length})');
+
+      for (int i = 0; i < recentHistory.length; i++) {
+        final msg = recentHistory[i];
+        _logger.d(
+            'RecentHistory[$i]: ${msg.isUser ? 'USER' : 'ASSISTANT'}: ${msg.message.substring(0, msg.message.length > 50 ? 50 : msg.message.length)}...');
+      }
 
       // Get user context for personalization
       final userContext = await _userContextService.getUserContext();
-      final ragFormattedContext =
-          _userContextService.formatContextForRAG(userContext);
+
+      // Convert ChatMessage to simple format for user context
+      final conversationData = recentHistory
+          .map((msg) => {
+                'role': msg.isUser ? 'user' : 'assistant',
+                'content': msg.message,
+                'timestamp': msg.timestamp.toIso8601String(),
+              })
+          .toList();
+
+      // 🔍 ENHANCED DEBUG: Log the conversation data being passed
+      _logger.i('🔍 ENHANCED DEBUG: conversationData before formatting:');
+      for (int i = 0; i < conversationData.length; i++) {
+        _logger.i('  [$i]: ${conversationData[i]}');
+      }
+      _logger.i('🔍 conversationData.length: ${conversationData.length}');
+      _logger.i('🔍 conversationData.isEmpty: ${conversationData.isEmpty}');
 
       _logger.i(
-          'Retrieved user context for personalized response: ${userContext.hasCards ? 'Has cards' : 'No cards'}, Context complete: ${userContext.hasCompleteContext}, Cards count: ${userContext.ownedCards.length}');
+          'Retrieved user context for personalized response: ${userContext.hasCards ? 'Has cards' : 'No cards'}, Context complete: ${userContext.hasCompleteContext}, Cards count: ${userContext.ownedCards.length}, Conversation history: ${recentHistory.length} messages');
 
-      // Prepare request body based on API version
-      Map<String, dynamic> requestBody;
+      // Format context to INCLUDE conversation history
+      final ragFormattedContext = _userContextService
+          .formatCompleteContextForRAG(userContext, conversationData);
 
-      if (isNewApi) {
-        // New API format: question + user_context
-        requestBody = {
-          'question': message,
-          'user_context': ragFormattedContext,
-        };
-      } else {
-        // Old API format: messages array with conversation history + user_context
-        final messages = <Map<String, dynamic>>[];
+      // 🐛 DEBUG: Check if conversation_history is included in ragFormattedContext
+      _logger.i(
+          '🔍 DEBUG: ragFormattedContext keys: ${ragFormattedContext.keys.toList()}');
+      if (ragFormattedContext.containsKey('conversation_history')) {
+        final convHistory =
+            ragFormattedContext['conversation_history'] as List<dynamic>?;
+        _logger.i(
+            '✅ CONVERSATION HISTORY FOUND in user_context: ${convHistory?.length ?? 0} messages');
 
-        // Add conversation history
-        for (final msg in conversationHistory) {
-          messages.add({
-            'role': msg.isUser ? 'user' : 'assistant',
-            'content': msg.message,
-          });
+        // Log first and last messages for verification
+        if (convHistory != null && convHistory.isNotEmpty) {
+          _logger.i('📝 First message: ${convHistory.first}');
+          if (convHistory.length > 1) {
+            _logger.i('📝 Last message: ${convHistory.last}');
+          }
+        } else {
+          _logger.e('❌ CONVERSATION HISTORY IS EMPTY!');
         }
-
-        // Add current message
-        messages.add({
-          'role': 'user',
-          'content': message,
-        });
-
-        requestBody = {
-          'messages': messages,
-          'user_context': ragFormattedContext,
-          'stream': false,
-        };
+      } else {
+        _logger.e('❌ CONVERSATION HISTORY NOT FOUND in user_context!');
       }
+
+      // 🔍 ENHANCED DEBUG: Log the formatted context before sending
+      _logger.i('🔍 FORMATTED USER CONTEXT:');
+      _logger.i(
+          '🔍 ragFormattedContext keys: ${ragFormattedContext.keys.toList()}');
+      if (ragFormattedContext.containsKey('conversation_history')) {
+        _logger.i(
+            '✅ CONVERSATION HISTORY FOUND in user_context: ${ragFormattedContext['conversation_history']?.length ?? 0} messages');
+      } else {
+        _logger.e('❌ CONVERSATION HISTORY MISSING from user_context');
+      }
+
+      // 🔍 NEW: Print the complete user_context for debugging
+      _logger.i('🔍 COMPLETE USER_CONTEXT BEING SENT:');
+      try {
+        final userContextJson = jsonEncode(ragFormattedContext);
+        _logger.i('📋 user_context JSON: $userContextJson');
+      } catch (e) {
+        _logger.e('❌ Failed to encode user_context to JSON: $e');
+        _logger.i('📋 user_context (raw): $ragFormattedContext');
+      }
+
+      // 🔍 ENHANCED DEBUG: Log the full ragFormattedContext structure
+      _logger.i('🔍 FULL ragFormattedContext structure:');
+      final contextJson = json.encode(ragFormattedContext);
+      final maxContextLength =
+          contextJson.length > 1000 ? 1000 : contextJson.length;
+      _logger.i(
+          '${contextJson.substring(0, maxContextLength)}${contextJson.length > 1000 ? '...' : ''}');
+
+      // Prepare request body
+      final requestBody = {
+        'question': message,
+        'user_context': ragFormattedContext,
+      };
 
       final requestJson = json.encode(requestBody);
       final maxLength = requestJson.length > 500 ? 500 : requestJson.length;
@@ -106,50 +164,18 @@ class RagChatService {
           throw Exception('RAG API returned invalid JSON response: $e');
         }
 
-        // Handle the response format based on API version
+        // Handle the new API response format
         String content;
         if (decodedResponse is Map<String, dynamic>) {
           final responseData = decodedResponse as Map<String, dynamic>;
 
-          if (isNewApi) {
-            // New API format: {response_text: "..."}
-            content = responseData['response_text'] ?? responseData.toString();
-          } else {
-            // Old API format: {answer: "...", sources: [...]}
-            if (responseData.containsKey('answer')) {
-              content = responseData['answer'] as String;
-
-              // Optionally include source information for old API
-              if (responseData.containsKey('sources') &&
-                  responseData['sources'] is List &&
-                  (responseData['sources'] as List).isNotEmpty) {
-                content += '\n\n📚 Sources:';
-                final sources = responseData['sources'] as List;
-                for (int i = 0; i < sources.length && i < 3; i++) {
-                  final source = sources[i];
-                  if (source is Map<String, dynamic> &&
-                      source.containsKey('content')) {
-                    final sourceContent = source['content'] as String;
-                    final shortContent = sourceContent.length > 100
-                        ? '${sourceContent.substring(0, 100)}...'
-                        : sourceContent;
-                    content += '\n• $shortContent';
-
-                    if (source.containsKey('url') && source['url'] != null) {
-                      content += '\n  🔗 ${source['url']}';
-                    }
-                  }
-                }
-              }
-            } else {
-              // Fallback to other possible response fields
-              content = responseData['content'] ??
-                  responseData['message'] ??
-                  responseData['response'] ??
-                  responseData['text'] ??
-                  responseData.toString();
-            }
-          }
+          // New API format: {response_text: "..."}
+          content = responseData['response_text'] ??
+              responseData['content'] ??
+              responseData['message'] ??
+              responseData['response'] ??
+              responseData['text'] ??
+              responseData.toString();
         } else if (decodedResponse is String) {
           content = decodedResponse;
         } else {
@@ -200,93 +226,22 @@ class RagChatService {
       _logger.d('Starting streaming request to RAG API');
 
       final baseUrl = EnvService.selectedRagApiBaseUrl;
-      final isNewApi = EnvService.useNewRagApi;
 
       // Note: New API might not support streaming, so we'll fall back to regular request
-      if (isNewApi) {
-        _logger.w(
-            'New RAG API may not support streaming, falling back to regular request');
-        try {
-          final response = await sendMessage(
-            message: message,
-            conversationHistory: conversationHistory,
-            model: model,
-          );
-          yield response;
-          return;
-        } catch (e) {
-          _logger.e('Failed to get response from new API: $e');
-          yield 'Sorry, I encountered an error while processing your request. Please try again.';
-          return;
-        }
-      }
-
-      // Old API streaming logic with user context
-      // Get user context for personalization
-      final userContext = await _userContextService.getUserContext();
-      final ragFormattedContext =
-          _userContextService.formatContextForRAG(userContext);
-
-      final messages = <Map<String, dynamic>>[];
-
-      // Add conversation history
-      for (final msg in conversationHistory) {
-        messages.add({
-          'role': msg.isUser ? 'user' : 'assistant',
-          'content': msg.message,
-        });
-      }
-
-      // Add current message
-      messages.add({
-        'role': 'user',
-        'content': message,
-      });
-
-      final requestBody = {
-        'messages': messages,
-        'user_context': ragFormattedContext,
-        'stream': true, // Enable streaming
-      };
-
-      final request = http.Request('POST', Uri.parse(baseUrl));
-      request.headers.addAll({
-        'Content-Type': 'application/json',
-        'Accept': 'text/plain',
-      });
-      request.body = json.encode(requestBody);
-
-      final streamedResponse = await request.send();
-
-      if (streamedResponse.statusCode == 200) {
-        await for (final chunk
-            in streamedResponse.stream.transform(utf8.decoder)) {
-          if (chunk.isNotEmpty) {
-            // Handle Server-Sent Events format if used
-            if (chunk.startsWith('data: ')) {
-              final data = chunk.substring(6).trim();
-              if (data != '[DONE]' && data.isNotEmpty) {
-                try {
-                  final jsonData = json.decode(data);
-                  final content =
-                      jsonData['content'] ?? jsonData['delta'] ?? data;
-                  if (content.isNotEmpty) {
-                    yield content;
-                  }
-                } catch (e) {
-                  // If not JSON, yield as plain text
-                  yield data;
-                }
-              }
-            } else {
-              // Plain text chunk
-              yield chunk;
-            }
-          }
-        }
-      } else {
-        throw Exception(
-            'Streaming request failed: ${streamedResponse.statusCode}');
+      _logger.w(
+          'RAG API may not support streaming, falling back to regular request');
+      try {
+        final response = await sendMessage(
+          message: message,
+          conversationHistory: conversationHistory,
+          model: model,
+        );
+        yield response;
+        return;
+      } catch (e) {
+        _logger.e('Failed to get response from RAG API: $e');
+        yield 'Sorry, I encountered an error while processing your request. Please try again.';
+        return;
       }
     } catch (e) {
       _logger.e('Failed to stream RAG response: $e');
@@ -312,14 +267,12 @@ class RagChatService {
   /// Detailed connectivity test with diagnostic information
   Future<Map<String, dynamic>> testConnectionDetailed() async {
     final baseUrl = EnvService.selectedRagApiBaseUrl;
-    final isNewApi = EnvService.useNewRagApi;
 
     final result = <String, dynamic>{
       'success': false,
       'response_time_ms': 0,
       'error': null,
       'endpoint': baseUrl,
-      'api_version': isNewApi ? 'new' : 'old',
       'cors_test': false,
       'network_test': false,
     };
@@ -337,19 +290,10 @@ class RagChatService {
 
       Map<String, dynamic> testPayload;
 
-      if (isNewApi) {
-        testPayload = {
-          'question': 'Connection test',
-          'user_context': ragFormattedContext,
-        };
-      } else {
-        testPayload = {
-          'messages': [
-            {'role': 'user', 'content': 'Connection test'}
-          ],
-          'user_context': ragFormattedContext,
-        };
-      }
+      testPayload = {
+        'question': 'Connection test',
+        'user_context': ragFormattedContext,
+      };
 
       _logger.d('Testing RAG API with payload: ${json.encode(testPayload)}');
 
@@ -375,12 +319,9 @@ class RagChatService {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData is Map<String, dynamic>) {
-          if (isNewApi && responseData.containsKey('response_text')) {
+          if (responseData.containsKey('response_text')) {
             result['success'] = true;
             result['sample_response'] = responseData['response_text'];
-          } else if (!isNewApi && responseData.containsKey('answer')) {
-            result['success'] = true;
-            result['sample_response'] = responseData['answer'];
           } else {
             result['error'] = 'Response format unexpected: ${response.body}';
           }

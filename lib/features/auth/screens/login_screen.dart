@@ -95,6 +95,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         print(
             'Google auth tokens - idToken: ${googleAuth.idToken != null}, accessToken: ${googleAuth.accessToken != null}');
 
+        // Add detailed logging for debugging
+        AppLogger.info('Preparing to call signInWithGoogle', null, null, {
+          'idToken': googleAuth.idToken ?? 'null',
+          'accessToken': googleAuth.accessToken ?? 'null',
+          'idTokenLength': googleAuth.idToken?.length ?? 0,
+          'accessTokenLength': googleAuth.accessToken?.length ?? 0,
+          'photoUrl': googleUser.photoUrl,
+          'displayName': googleUser.displayName,
+        });
+
+        // Check if we have the required tokens for direct authentication
+        if (googleAuth.idToken == null || googleAuth.idToken!.isEmpty) {
+          AppLogger.warning(
+              'ID Token is null or empty, falling back to Supabase OAuth',
+              null,
+              null, {
+            'platform': kIsWeb ? 'web' : 'mobile',
+            'hasAccessToken': googleAuth.accessToken != null,
+          });
+
+          // Use Supabase's built-in OAuth flow instead
+          await _handleSupabaseOAuth();
+          return;
+        }
+
         // For web, idToken might be null, but we can still authenticate with accessToken
         // Supabase can work with just accessToken for Google OAuth
         if (googleAuth.accessToken == null) {
@@ -102,7 +127,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         }
 
         await ref.read(authProvider.notifier).signInWithGoogle(
-              idToken: googleAuth.idToken ?? '', // Provide empty string if null
+              idToken: googleAuth.idToken!, // Now we know it's not null
               accessToken: googleAuth.accessToken!,
               photoUrl: googleUser.photoUrl,
               displayName: googleUser.displayName,
@@ -264,6 +289,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _handleSupabaseOAuth() async {
     try {
+      AppLogger.info(
+          'Starting Supabase OAuth flow for Google login', null, null, {
+        'platform': kIsWeb ? 'web' : 'mobile',
+        'redirectUrl': kIsWeb ? Uri.base.toString() : 'null',
+      });
+
       // Use Supabase's built-in OAuth for web when idToken is not available
       final response = await SupabaseService.client.auth.signInWithOAuth(
         OAuthProvider.google,
@@ -272,13 +303,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (response) {
         // OAuth initiated successfully, user will be redirected
-        AppLogger.auth('Supabase OAuth initiated for Google login');
+        AppLogger.auth(
+            'Supabase OAuth initiated for Google login', null, null, {
+          'success': true,
+          'platform': kIsWeb ? 'web' : 'mobile',
+        });
+
+        // Show success message to user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Redirecting to Google for authentication...'),
+              backgroundColor: Colors.blue,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
 
         // For login, we don't set up a listener here since the app will restart
         // Instead, we'll handle this in the main app's auth state management
+      } else {
+        throw Exception('OAuth initiation failed - no response received');
       }
     } catch (error) {
-      AppLogger.error('Supabase OAuth failed', error, null);
+      AppLogger.error('Supabase OAuth failed', error, null, {
+        'platform': kIsWeb ? 'web' : 'mobile',
+        'errorType': error.runtimeType.toString(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('OAuth authentication failed: $error'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+
       throw Exception('OAuth authentication failed: $error');
     }
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // Add for kDebugMode
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -20,11 +21,13 @@ void main() async {
   // Load environment variables
   await EnvService.loadEnv(isProd: environment == 'prod');
 
-  // Debug environment loading
-  print('DEBUG: Environment loaded: $environment');
-  print('DEBUG: Loading .env.${environment == 'prod' ? 'prod' : 'dev'}');
-  print(
-      'DEBUG: OPENROUTER_API_KEY present: ${dotenv.env.containsKey('OPENROUTER_API_KEY')}');
+  // Debug environment loading (only in debug mode)
+  if (kDebugMode) {
+    print('DEBUG: Environment loaded: $environment');
+    print('DEBUG: Loading .env.${environment == 'prod' ? 'prod' : 'dev'}');
+    print(
+        'DEBUG: OPENROUTER_API_KEY present: ${dotenv.env.containsKey('OPENROUTER_API_KEY')}');
+  }
 
   // Initialize Supabase
   await SupabaseService.initialize();
@@ -57,6 +60,7 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
       title: 'CardSense',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,

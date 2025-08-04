@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../features/landing/screens/get_started_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/signup_screen.dart';
+import '../features/auth/screens/profile_screen.dart';
 import '../features/landing/screens/landing_screen.dart';
 import '../features/splash/splash_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/onboarding/screens/onboarding_screen.dart';
 import '../features/auth/auth_provider.dart';
 import '../services/onboarding_service.dart';
-import '../services/supabase_service.dart';
+
 import '../core/logging/app_logger.dart';
 
 // Auth state notifier for router refresh
@@ -30,7 +32,7 @@ class AppRouter {
     return GoRouter(
       initialLocation: '/splash',
       refreshListenable: _AuthStateNotifier(ref),
-      redirect: (context, state) {
+      redirect: (context, state) async {
         // Get current auth state
         final authState = ref.read(authProvider);
         final isAuthenticated = authState.hasValue && authState.value != null;
@@ -47,26 +49,74 @@ class AppRouter {
           return null;
         }
 
-        // If user is authenticated and trying to access login/signup/landing, redirect to home
-        if (isAuthenticated &&
-            (currentLocation == '/login' ||
-                currentLocation == '/signup' ||
-                currentLocation == '/')) {
-          AppLogger.info('Redirecting authenticated user to home', null, null, {
-            'fromLocation': currentLocation,
-            'userId': authState.value!.id,
-          });
-          return '/home';
-        }
-
         // If user is not authenticated and trying to access protected routes, redirect to login
         if (!isAuthenticated &&
-            (currentLocation == '/home' || currentLocation == '/onboarding')) {
+            (currentLocation == '/home' ||
+                currentLocation == '/onboarding' ||
+                currentLocation == '/profile')) {
           AppLogger.info(
               'Redirecting unauthenticated user to login', null, null, {
             'fromLocation': currentLocation,
           });
           return '/login';
+        }
+
+        // If user is authenticated, check onboarding status
+        if (isAuthenticated) {
+          // Check if user has completed onboarding
+          final hasCompletedOnboarding =
+              await onboardingService.checkOnboardingStatusInDB();
+
+          AppLogger.debug('Onboarding status check', null, null, {
+            'hasCompletedOnboarding': hasCompletedOnboarding,
+            'currentLocation': currentLocation,
+            'userId': authState.value!.id,
+          });
+
+          // If user hasn't completed onboarding and trying to access home, redirect to onboarding
+          // Allow access to profile screen even without completing onboarding
+          if (!hasCompletedOnboarding && currentLocation == '/home') {
+            AppLogger.info(
+                'Redirecting user to complete onboarding', null, null, {
+              'fromLocation': currentLocation,
+              'userId': authState.value!.id,
+            });
+            return '/onboarding';
+          }
+
+          // If user has completed onboarding and trying to access onboarding, redirect to home
+          if (hasCompletedOnboarding && currentLocation == '/onboarding') {
+            AppLogger.info('Redirecting completed user to home', null, null, {
+              'fromLocation': currentLocation,
+              'userId': authState.value!.id,
+            });
+            return '/home';
+          }
+
+          // If user trying to access login/signup/landing and has completed onboarding, redirect to home
+          if (hasCompletedOnboarding &&
+              (currentLocation == '/login' ||
+                  currentLocation == '/signup' ||
+                  currentLocation == '/')) {
+            AppLogger.info(
+                'Redirecting authenticated user to home', null, null, {
+              'fromLocation': currentLocation,
+              'userId': authState.value!.id,
+            });
+            return '/home';
+          }
+
+          // If user trying to access login/signup/landing and hasn't completed onboarding, redirect to onboarding
+          if (!hasCompletedOnboarding &&
+              (currentLocation == '/login' ||
+                  currentLocation == '/signup' ||
+                  currentLocation == '/')) {
+            AppLogger.info('Redirecting new user to onboarding', null, null, {
+              'fromLocation': currentLocation,
+              'userId': authState.value!.id,
+            });
+            return '/onboarding';
+          }
         }
 
         // No redirect needed
@@ -116,6 +166,13 @@ class AppRouter {
           path: '/home',
           name: 'home',
           builder: (context, state) => const HomeScreen(),
+        ),
+
+        // Profile Screen
+        GoRoute(
+          path: '/profile',
+          name: 'profile',
+          builder: (context, state) => const ProfileScreen(),
         ),
       ],
       errorBuilder: (context, state) => Scaffold(

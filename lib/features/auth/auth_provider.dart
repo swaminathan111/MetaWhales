@@ -144,6 +144,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       'hasAccessToken': accessToken.isNotEmpty,
       'hasPhotoUrl': photoUrl != null,
       'hasDisplayName': displayName != null,
+      'idTokenLength': idToken.length,
+      'accessTokenLength': accessToken.length,
+      'idTokenPreview':
+          idToken.isNotEmpty ? '${idToken.substring(0, 10)}...' : 'empty',
     });
 
     state = const AsyncValue.loading();
@@ -151,14 +155,30 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     try {
       // Validate that we have both required tokens
       if (idToken.isEmpty) {
+        AppLogger.error(
+            'ID Token validation failed - token is empty', null, null, {
+          'idTokenLength': idToken.length,
+          'accessTokenLength': accessToken.length,
+        });
         throw Exception(
             'ID Token is required for Google authentication but was not provided. This is a common issue on web - please try using a different browser or clearing your browser cache.');
       }
 
       if (accessToken.isEmpty) {
+        AppLogger.error(
+            'Access Token validation failed - token is empty', null, null, {
+          'idTokenLength': idToken.length,
+          'accessTokenLength': accessToken.length,
+        });
         throw Exception(
             'Access Token is required for Google authentication but was not provided.');
       }
+
+      AppLogger.info('Calling Supabase signInWithIdToken', null, null, {
+        'provider': 'google',
+        'idTokenLength': idToken.length,
+        'accessTokenLength': accessToken.length,
+      });
 
       final response = await SupabaseService.client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
@@ -192,7 +212,11 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
         throw Exception('Google sign in failed - no user returned');
       }
     } catch (error, stackTrace) {
-      AppLogger.error('Google sign in failed', error, stackTrace);
+      AppLogger.error('Google sign in failed', error, stackTrace, {
+        'idTokenLength': idToken.length,
+        'accessTokenLength': accessToken.length,
+        'errorType': error.runtimeType.toString(),
+      });
       state = AsyncValue.error(error, stackTrace);
     }
   }

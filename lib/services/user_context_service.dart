@@ -237,6 +237,81 @@ class UserContextService {
     }
   }
 
+  /// Format COMPLETE user context including conversation history for RAG API
+  Map<String, dynamic> formatCompleteContextForRAG(
+      UserContext context, List<dynamic> conversationHistory) {
+    try {
+      // 🔍 ENHANCED DEBUG: Log what we received
+      AppLogger.debug('🔍 formatCompleteContextForRAG called', null, null, {
+        'conversationHistory.length': conversationHistory.length,
+        'conversationHistory.isEmpty': conversationHistory.isEmpty,
+        'conversationHistory.runtimeType':
+            conversationHistory.runtimeType.toString(),
+      });
+
+      // Log each conversation item
+      for (int i = 0; i < conversationHistory.length; i++) {
+        AppLogger.debug('🔍 conversationHistory[$i]', null, null, {
+          'item': conversationHistory[i].toString(),
+          'type': conversationHistory[i].runtimeType.toString(),
+        });
+      }
+
+      // Get the base user context
+      final baseContext = formatContextForRAG(context);
+
+      // 🔧 OPTIMIZATION: Only use last 5 messages for context efficiency
+      final recentHistory = conversationHistory.length > 5
+          ? conversationHistory.sublist(conversationHistory.length - 5)
+          : conversationHistory;
+
+      AppLogger.debug('🔍 After filtering to recent history', null, null, {
+        'recentHistory.length': recentHistory.length,
+        'recentHistory.isEmpty': recentHistory.isEmpty,
+      });
+
+      // Add limited conversation history to the context
+      final completeContext = Map<String, dynamic>.from(baseContext);
+      completeContext['conversation_history'] = recentHistory;
+
+      // 🔍 ENHANCED DEBUG: Verify the conversation_history was added
+      AppLogger.debug(
+          '🔍 After adding conversation_history to context', null, null, {
+        'completeContext.keys': completeContext.keys.toList(),
+        'conversation_history_exists':
+            completeContext.containsKey('conversation_history'),
+        'conversation_history_length':
+            completeContext['conversation_history']?.length ?? 0,
+      });
+
+      // Update metadata to reflect complete context
+      completeContext['context_metadata'] = {
+        ...completeContext['context_metadata'],
+        'includes_conversation_history': true,
+        'conversation_length': recentHistory.length,
+        'total_conversation_length': conversationHistory.length,
+        'context_type': 'complete_with_recent_conversation',
+        'history_limit': 5,
+      };
+
+      AppLogger.debug(
+          'Complete RAG context formatted with limited conversation history',
+          null,
+          null, {
+        'cardsCount': completeContext['owned_cards']?.length ?? 0,
+        'recentConversationLength': recentHistory.length,
+        'totalConversationLength': conversationHistory.length,
+        'hasProfile': completeContext['user_profile'] != null,
+      });
+
+      return completeContext;
+    } catch (error, stackTrace) {
+      AppLogger.error(
+          'Failed to format complete context for RAG', error, stackTrace);
+      return formatContextForRAG(context); // Fallback to base context
+    }
+  }
+
   /// Get quick user summary for chat display
   String getUserSummary(UserContext context) {
     final cardsCount = context.ownedCards.length;

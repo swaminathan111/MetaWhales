@@ -10,7 +10,9 @@ class GoogleAuthService {
     AppLogger.auth('Initializing Google Auth Service', null, null, {
       'platform': kIsWeb ? 'web' : 'mobile',
       'clientId':
-          kIsWeb ? AppConfig.googleWebClientId : 'from_google_services_json'
+          kIsWeb ? AppConfig.googleWebClientId : 'from_google_services_json',
+      'clientIdLength': kIsWeb ? AppConfig.googleWebClientId.length : 0,
+      'isConfigured': AppConfig.isGoogleAuthConfigured,
     });
 
     // For web, we need to specify the client ID and use proper scopes
