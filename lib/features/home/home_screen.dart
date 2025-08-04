@@ -85,6 +85,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.credit_card, color: Colors.black54),
+            tooltip: 'Manage Cards',
+            onPressed: () {
+              context.go('/manage-cards');
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.logout, color: Colors.black54),
             onPressed: () async {
               await ref.read(authProvider.notifier).signOut();

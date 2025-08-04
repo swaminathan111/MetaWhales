@@ -11,6 +11,7 @@ import '../features/home/home_screen.dart';
 import '../features/onboarding/screens/onboarding_screen.dart';
 import '../features/auth/auth_provider.dart';
 import '../services/onboarding_service.dart';
+import '../features/manage_cards/screens/manage_cards_screen.dart';
 
 import '../core/logging/app_logger.dart';
 
@@ -173,6 +174,13 @@ class AppRouter {
           path: '/profile',
           name: 'profile',
           builder: (context, state) => const ProfileScreen(),
+        ),
+
+        // Manage Cards Screen
+        GoRoute(
+          path: '/manage-cards',
+          name: 'manage-cards',
+          builder: (context, state) => const ManageCardsScreen(),
         ),
       ],
       errorBuilder: (context, state) => Scaffold(
