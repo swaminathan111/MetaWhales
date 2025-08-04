@@ -1,112 +1,109 @@
 import 'package:flutter/material.dart';
 import '../models/credit_card_model.dart';
 
+String _formatCurrency(double amount) {
+  if (amount >= 100000) {
+    double result = amount / 100000;
+    if (result % 1 == 0) {
+      return '₹${result.toInt()}L';
+    }
+    return '₹${result.toStringAsFixed(1)}L';
+  } else if (amount >= 1000) {
+    double result = amount / 1000;
+    if (result % 1 == 0) {
+      return '₹${result.toInt()}K';
+    }
+    return '₹${result.toStringAsFixed(1)}K';
+  }
+  return '₹${amount.toInt()}';
+}
+
 class CreditCardWidget extends StatelessWidget {
   final CreditCard card;
+  final bool isBest;
 
-  const CreditCardWidget({super.key, required this.card});
+  const CreditCardWidget({super.key, required this.card, this.isBest = false});
+
+  String _formatDate(DateTime date) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${date.day} ${months[date.month - 1]}';
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Dismissible(
-      key: Key(card.id),
-      direction: DismissDirection.endToStart,
-      onDismissed: (direction) {
-        // Handle remove action here
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${card.cardName} removed')),
-        );
-      },
-      background: Container(
-        color: Colors.red,
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-        child: const Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.delete, color: Colors.white),
-            Text('Remove', style: TextStyle(color: Colors.white)),
-          ],
-        ),
-      ),
-      child: Card(
-        elevation: 4.0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              // Top Section
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Card Details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(card.cardName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.credit_card, color: Colors.blue, size: 20),
-                            const SizedBox(width: 8),
-                            Text('... ${card.lastFourDigits}', style: const TextStyle(fontSize: 16, color: Colors.black54)),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        Image.asset('assets/icons/card_chip.png', width: 40),
-                      ],
+    return Card(
+      elevation: 4.0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                // Top bar: Logo and masked digits
+                Row(
+                  children: [
+                    Image.asset(card.logoAsset, height: 20), // Tiny logo
+                    const SizedBox(width: 8),
+                    Text('... ${card.lastFourDigits}', style: const TextStyle(fontSize: 12, color: Colors.black54)), // Smaller digits
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Middle: Next Due
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today, size: 14, color: Colors.black54),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Next Due: ₹${card.nextDueAmount.toStringAsFixed(0)} on ${_formatDate(card.nextDueDate)}',
+                      style: const TextStyle(fontSize: 12, color: Colors.black54),
                     ),
-                  ),
-                  // Bank Logo and More Icon
-                  Row(
-                    children: [
-                      Image.asset(card.logoAsset, height: 24),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.more_vert),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 8),
-              // Bottom Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Next Bill Info
-                  const Row(
-                    children: [
-                      Icon(Icons.calendar_today, color: Colors.black54, size: 20),
-                      SizedBox(width: 8),
-                      Text('Next bill on 18 Aug'),
-                    ],
-                  ),
-                  // Pay Now Button
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                  ],
+                ),
+                const Divider(height: 24.0, thickness: 1.0),
+
+                // Bottom: Perks
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: card.perks.take(2).map((perk) {
+                    return Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(perk['icon']!, style: const TextStyle(fontSize: 14)),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              perk['text']!,
+                              style: const TextStyle(fontSize: 12, color: Colors.black54),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    ),
-                    child: const Column(
-                      children: [
-                        Text('PAY NOW', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        Text('Earn 1.0%', style: TextStyle(color: Colors.white, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
           ),
-        ),
+
+          // Badge
+          if (isBest)
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Chip(
+                label: Text('★ ${card.bestUseTag}'),
+                backgroundColor: Colors.green[100],
+                labelStyle: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 10),
+                padding: EdgeInsets.zero,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -4,7 +4,7 @@ class AppTheme {
   // Define the color palette
   static const Color mint = Color(0xFFA8E6CD);
   static const Color periwinkle = Color(0xFFA9BEE9);
-  static const Color darkSlate = Color(0xFF525E66);
+  static const Color darkSlate = Color(0xFF353C41); // Original: 0xFF525E66
   static const Color lightSurface = Color(0xFFF7F7F7);
   static const Color softNude = Color(0xFFF0E3DE);
   static const Color success = Color(0xFF81C784);

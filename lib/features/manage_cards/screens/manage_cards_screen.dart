@@ -3,28 +3,56 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/credit_card_model.dart';
 import '../widgets/credit_card_widget.dart';
 
-class ManageCardsScreen extends ConsumerWidget {
+class ManageCardsScreen extends ConsumerStatefulWidget {
   const ManageCardsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ManageCardsScreen> createState() => _ManageCardsScreenState();
+}
+
+class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
     // Mock data for now
+
     final List<CreditCard> cards = [
       CreditCard(
         id: '1',
-        bankName: 'HDFC Bank',
-        cardName: 'HDFC Infinia',
-        lastFourDigits: '1920',
-        cardType: 'Mastercard',
         logoAsset: 'assets/images/bank/logos/hdfc-bank.png',
+        lastFourDigits: '1920',
+        bestUseTag: 'Travel',
+        nextDueDate: DateTime(2025, 8, 18),
+        nextDueAmount: 3134.0,
+        perks: [
+          {'icon': '✈️', 'text': 'Lounge Access'},
+          {'icon': '🏨', 'text': 'Hotel Vouchers'},
+        ],
       ),
       CreditCard(
         id: '2',
-        bankName: 'HDFC Bank',
-        cardName: 'HDFC Regalia',
-        lastFourDigits: '1234',
-        cardType: 'Visa',
-        logoAsset: 'assets/images/bank/logos/hdfc-bank.png',
+        logoAsset: 'assets/images/bank/logos/icici-bank.png',
+        lastFourDigits: '5678',
+        bestUseTag: 'Shopping',
+        nextDueDate: DateTime(2025, 8, 22),
+        nextDueAmount: 1250.50,
+        perks: [
+          {'icon': '🛍️', 'text': '5% on Amazon'},
+          {'icon': '🎁', 'text': '1% Rewards'},
+        ],
+      ),
+      CreditCard(
+        id: '3',
+        logoAsset: 'assets/images/bank/logos/axis-bank.png',
+        lastFourDigits: '9012',
+        bestUseTag: 'Fuel',
+        nextDueDate: DateTime(2025, 9, 5),
+        nextDueAmount: 876.0,
+        perks: [
+          {'icon': '⛽', 'text': '4% Fuel Surcharge'},
+          {'icon': '🎬', 'text': 'Movie Tickets'},
+        ],
       ),
     ];
 
@@ -82,7 +110,24 @@ class ManageCardsScreen extends ConsumerWidget {
             ],
           ),
           // Card List
-          ...cards.map((card) => CreditCardWidget(card: card)).toList(),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _isExpanded ? cards.length : 2,
+            itemBuilder: (context, index) {
+              return CreditCardWidget(card: cards[index], isBest: index == 0);
+            },
+          ),
+          const SizedBox(height: 16.0),
+          if (cards.length > 2)
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _isExpanded = !_isExpanded;
+                });
+              },
+              child: Text(_isExpanded ? 'Show Less' : 'Show More'),
+            ),
         ],
       ),
     );
