@@ -39,18 +39,18 @@ class _SplashScreenState extends State<SplashScreen> {
                   // Card icon with dots
                   Row(
                     children: [
-                      // Vertical line
-                      Container(
-                        width: 1,
-                        height: 40,
-                        color: cardSenseTheme.colorScheme.onPrimary,
-                      ),
-                      const SizedBox(width: 12),
                       // Card icon
                       Image.asset(
                         'assets/icons/cardsense_icon_white.png',
                         width: 40,
                         height: 40,
+                      ),
+                       const SizedBox(width: 12),
+                      // Vertical line
+                      Container(
+                        width: 1,
+                        height: 40,
+                        color: cardSenseTheme.colorScheme.onPrimary,
                       ),
                     ],
                   ),
@@ -74,8 +74,7 @@ class _SplashScreenState extends State<SplashScreen> {
                           SizedBox(width: 4),
                           Text(
                             'AI',
-                            style: cardSenseTheme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 20,
+                            style: cardSenseTheme.textTheme.headlineLarge?.copyWith(
                               color: cardSenseTheme.colorScheme.onPrimary,
                             ),
                           ),
@@ -83,9 +82,9 @@ class _SplashScreenState extends State<SplashScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'INTELLIGENCE MEETS MONEY',
+                        'Intelligence Meets Money',
                         style: cardSenseTheme.textTheme.bodySmall?.copyWith(
-                          fontSize: 10,
+                          fontSize: 14,
                           color: cardSenseTheme.colorScheme.onPrimary.withOpacity(0.8),
                         ),
                       ),
