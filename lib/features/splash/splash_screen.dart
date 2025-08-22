@@ -48,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       const SizedBox(width: 12),
                       // Card icon
                       Image.asset(
-                        'assets/icons/cardsense_icon.png',
+                        'assets/icons/cardsense_icon_white.png',
                         width: 40,
                         height: 40,
                       ),
