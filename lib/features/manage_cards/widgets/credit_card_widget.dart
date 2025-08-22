@@ -209,7 +209,7 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppTheme.mint,
+                        color: cardSenseTheme.colorScheme.primary,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
@@ -386,7 +386,7 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
                     // Handle pay now action
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.periwinkle,
+                    backgroundColor: cardSenseTheme.colorScheme.secondary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),

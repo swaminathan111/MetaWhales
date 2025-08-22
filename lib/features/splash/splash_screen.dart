@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../core/theme/app_theme.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,8 +14,9 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Simulate loading time and then navigate to landing screen
-    Future.delayed(const Duration(seconds: 2), () {
+    
+    // Navigate to landing screen after delay
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         context.go('/');
       }
@@ -23,34 +26,75 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.credit_card,
-              size: 80,
-              color: Colors.white,
-            ),
-            SizedBox(height: 24),
-            Text(
-              'CardSense',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+      backgroundColor: cardSenseTheme.colorScheme.primary,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Card icon with dots
+                  Row(
+                    children: [
+                      // Vertical line
+                      Container(
+                        width: 1,
+                        height: 40,
+                        color: cardSenseTheme.colorScheme.onPrimary,
+                      ),
+                      const SizedBox(width: 12),
+                      // Card icon
+                      Image.asset(
+                        'assets/icons/cardsense_icon.png',
+                        width: 40,
+                        height: 40,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  // CardSense AI text
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            'CardSense',
+                            style: cardSenseTheme.textTheme.headlineLarge?.copyWith(
+                              color: cardSenseTheme.colorScheme.onPrimary,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'AI',
+                            style: cardSenseTheme.textTheme.bodyLarge?.copyWith(
+                              fontSize: 20,
+                              color: cardSenseTheme.colorScheme.onPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'INTELLIGENCE MEETS MONEY',
+                        style: cardSenseTheme.textTheme.bodySmall?.copyWith(
+                          fontSize: 10,
+                          color: cardSenseTheme.colorScheme.onPrimary.withOpacity(0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Your AI Credit Card Assistant',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -101,10 +101,11 @@ flutter:
     - lib/features/landing/assets/images/
     - lib/features/auth/assets/icons/
     - lib/assets/prompts/
-    - assets/cardsense_logo.png
     - assets/images/
     - assets/images/bank/logos/
     - assets/icons/
+    - assets/icons/cardsense_icon.png
+    - assets/icons/card_icon.svg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
@@ -116,10 +117,10 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/cardsense_logo.png"
+  image_path: "assets/icons/cardsense_icon.png"
   min_sdk_android: 21
   adaptive_icon_background: "#A8E6CD"
-  adaptive_icon_foreground: "assets/cardsense_logo.png"
+  adaptive_icon_foreground: "assets/icons/cardsense_icon.png"
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a

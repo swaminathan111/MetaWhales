@@ -62,7 +62,7 @@ class MyApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'CardSense',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.getTheme(),
+      theme: cardSenseTheme,
       routerConfig: AppRouter.getRouter(onboardingService, ref),
     );
   }
