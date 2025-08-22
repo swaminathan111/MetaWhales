@@ -42,8 +42,8 @@ class _SplashScreenState extends State<SplashScreen> {
                       // Card icon
                       Image.asset(
                         'assets/icons/cardsense_icon_white.png',
-                        width: 40,
-                        height: 40,
+                        width: 50,
+                        height: 50,
                       ),
                        const SizedBox(width: 12),
                       // Vertical line
