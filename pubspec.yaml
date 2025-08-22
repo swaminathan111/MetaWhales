@@ -106,6 +106,7 @@ flutter:
     - assets/icons/
     - assets/icons/cardsense_icon.png
     - assets/icons/card_icon.svg
+    - assets/icons/cta_agent_circle.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

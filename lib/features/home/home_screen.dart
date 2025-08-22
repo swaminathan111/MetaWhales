@@ -309,6 +309,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       bottomNavigationBar: AppBottomNavigationBar(
         currentIndex: 0, // Home is always index 0
         onTap: _handleNavigationTap,
+        onCTATap: () {
+          // Handle CTA button tap - could open chat or AI assistant
+          // For now, focus on the chat input
+          FocusScope.of(context).requestFocus(FocusNode());
+        },
       ),
     );
   }
@@ -355,16 +360,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Good Morning';
-    } else if (hour < 17) {
-      return 'Good Afternoon';
-    } else {
-      return 'Good Evening';
-    }
-  }
 }
 
 

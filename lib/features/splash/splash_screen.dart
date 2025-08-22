@@ -39,11 +39,18 @@ class _SplashScreenState extends State<SplashScreen> {
                   // Card icon with dots
                   Row(
                     children: [
-                      // Card icon
-                      Image.asset(
-                        'assets/icons/cardsense_icon_white.png',
-                        width: 50,
-                        height: 50,
+
+                      CircleAvatar(
+                        radius: 35, // outer circle size
+                        backgroundColor: Colors.white, // background color
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/icons/cta_agent_circle.png',
+                            width: 70,
+                            height:70,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       ),
                        const SizedBox(width: 12),
                       // Vertical line
@@ -84,8 +91,8 @@ class _SplashScreenState extends State<SplashScreen> {
                       Text(
                         'Intelligence Meets Money',
                         style: cardSenseTheme.textTheme.bodySmall?.copyWith(
-                          fontSize: 14,
-                          color: cardSenseTheme.colorScheme.onPrimary.withOpacity(0.8),
+                          fontSize: 15,
+                          color: cardSenseTheme.colorScheme.onPrimary.withOpacity(0.9),
                         ),
                       ),
                     ],

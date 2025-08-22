@@ -99,9 +99,9 @@ class GradientHeader extends StatelessWidget {
             // Greeting
             Text(
               _getGreeting() + ', ${userName.split(' ')[0].split('.')[0]} 👋',
-              style: theme.textTheme.headlineMedium?.copyWith(
+              style: theme.textTheme.headlineSmall?.copyWith(
                 color: theme.colorScheme.onPrimary,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
               ),
             ),
             
