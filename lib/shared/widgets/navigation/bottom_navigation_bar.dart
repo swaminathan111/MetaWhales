@@ -119,12 +119,12 @@ class AppBottomNavigationBar extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF58D5D3).withOpacity(0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                          spreadRadius: 0,
-                        ),
+                        // BoxShadow(
+                        //   color: const Color(0xFF58D5D3).withOpacity(0.3),
+                        //   blurRadius: 20,
+                        //   offset: const Offset(0, 8),
+                        //   spreadRadius: 0,
+                        // ),
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
                           blurRadius: 10,
