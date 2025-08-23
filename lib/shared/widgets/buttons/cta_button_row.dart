@@ -18,17 +18,51 @@ class CTAButtonRow extends StatelessWidget {
     
     if (actions.isEmpty) return const SizedBox.shrink();
     
+    // Split actions into 2 rows
+    final midPoint = (actions.length / 2).ceil();
+    final firstRow = actions.take(midPoint).toList();
+    final secondRow = actions.skip(midPoint).toList();
+    
     return Padding(
       padding: EdgeInsets.only(top: theme.spacing.md),
-      child: Wrap(
-        spacing: theme.spacing.sm,
-        runSpacing: theme.spacing.sm,
-        children: actions.map((action) {
-          return _CTAButton(
-            action: action,
-            onTap: () => onActionTap(action),
-          );
-        }).toList(),
+      child: Column(
+        children: [
+          // First row - horizontally scrollable
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: firstRow.map((action) {
+                return Padding(
+                  padding: EdgeInsets.only(right: theme.spacing.sm),
+                  child: _CTAButton(
+                    action: action,
+                    onTap: () => onActionTap(action),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          
+          // Spacing between rows
+          if (secondRow.isNotEmpty) SizedBox(height: theme.spacing.sm),
+          
+          // Second row - horizontally scrollable
+          if (secondRow.isNotEmpty)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: secondRow.map((action) {
+                  return Padding(
+                    padding: EdgeInsets.only(right: theme.spacing.sm),
+                    child: _CTAButton(
+                      action: action,
+                      onTap: () => onActionTap(action),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+        ],
       ),
     );
   }

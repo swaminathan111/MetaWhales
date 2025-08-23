@@ -72,10 +72,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // CTA Button Row for AI assistance
                     CTAButtonRow(
                       actions: [
-                        CTAAction(id: 'ask_follow_up', title: 'Ask Follow-up', icon: Icons.chat),
                         CTAAction(id: 'get_recommendation', title: 'Get Recommendation', icon: Icons.recommend, isPrimary: true),
+                        CTAAction(id: 'ask_follow_up', title: 'Ask Follow-up', icon: Icons.chat),
                         CTAAction(id: 'compare_options', title: 'Compare Options', icon: Icons.compare_arrows),
                         CTAAction(id: 'view_details', title: 'View Details', icon: Icons.visibility),
+                        CTAAction(id: 'plan_purchase', title: 'Plan a Purchase', icon: Icons.shopping_cart),
+                        CTAAction(id: 'see_travel', title: 'See Travel', icon: Icons.flight),
+                        CTAAction(id: 'add_card', title: 'Add Card', icon: Icons.add_card),
                       ],
                       onActionTap: (action) async {
                         String? predefinedMessage;
@@ -88,6 +91,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             break;
                           case 'compare_options':
                             predefinedMessage = 'Compare my card options';
+                            break;
+                          case 'plan_purchase':
+                            predefinedMessage = 'Plan a purchase';
+                            break;
+                          case 'see_travel':
+                            predefinedMessage = 'See travel';
+                            break;
+                          case 'add_card':
+                            predefinedMessage = 'Add card';
                             break;
                           case 'view_details':
                             context.push('/cards');
