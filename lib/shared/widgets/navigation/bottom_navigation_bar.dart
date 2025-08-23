@@ -142,17 +142,23 @@ class AppBottomNavigationBar extends StatelessWidget {
                 child: Container(
                   width: 80,
                   height: 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                        spreadRadius: 0,
-                      ),
-                    ],
-                  ),
+                  // decoration: BoxDecoration(
+                  //   shape: BoxShape.circle,
+                  //   boxShadow: [
+                  //     BoxShadow(
+                  //       color: Colors.black.withOpacity(0.1),
+                  //       blurRadius: 8,
+                  //       offset: const Offset(0, 2),
+                  //       spreadRadius: 0,
+                  //     ),
+                  //     BoxShadow(
+                  //       color: Colors.black.withOpacity(0.05),
+                  //       blurRadius: 15,
+                  //       offset: const Offset(0, 5),
+                  //       spreadRadius: 0,
+                  //     ),
+                  //   ],
+                  // ),
                   child: ClipOval(
                     child: Image.asset(
                       'assets/icons/cta_agent_circle.png',
@@ -244,8 +250,9 @@ class BottomNavBarPainter extends CustomPainter {
     final shadowPath = Path();
 
     // Define the curved cutout dimensions
-    const double cutoutRadius = 40.0;
-    const double cutoutMargin = 20.0;
+    const double cutoutRadius = 48.0;     // notch half‑width & arc radius
+    const double cutoutMargin = 24.0;     // shoulder length on each side
+    final double cutoutHeight = cutoutRadius * 0.15; // 10 pixels deep (48 * 0.21 ≈ 10)
     final double centerX = size.width / 2;
 
     // Start from bottom left
@@ -258,28 +265,32 @@ class BottomNavBarPainter extends CustomPainter {
     shadowPath.lineTo(0, -2);
     shadowPath.lineTo(centerX - cutoutRadius - cutoutMargin, -2);
 
-    // Create the curved cutout
+    // Create the curved cutout - LEFT shoulder down
     path.quadraticBezierTo(
-      centerX - cutoutRadius, 0,
-      centerX - cutoutRadius, cutoutRadius * 0.6,
+      centerX - cutoutRadius - cutoutMargin * 0.6, 0,  // ease-in control
+      centerX - cutoutRadius, cutoutHeight,
     );
+    
+    // Arc across the bottom of the notch
     path.arcToPoint(
-      Offset(centerX + cutoutRadius, cutoutRadius * 0.6),
+      Offset(centerX + cutoutRadius, cutoutHeight),
       radius: const Radius.circular(cutoutRadius),
       clockwise: false,
     );
+    
+    // RIGHT shoulder up
     path.quadraticBezierTo(
-      centerX + cutoutRadius, 0,
+      centerX + cutoutRadius + cutoutMargin * 0.6, 0,  // ease-out control
       centerX + cutoutRadius + cutoutMargin, 0,
     );
 
     // Shadow path for cutout
     shadowPath.quadraticBezierTo(
       centerX - cutoutRadius, -2,
-      centerX - cutoutRadius, cutoutRadius * 0.6,
+      centerX - cutoutRadius, cutoutHeight,
     );
     shadowPath.arcToPoint(
-      Offset(centerX + cutoutRadius, cutoutRadius * 0.6),
+      Offset(centerX + cutoutRadius, cutoutHeight),
       radius: const Radius.circular(cutoutRadius),
       clockwise: false,
     );
