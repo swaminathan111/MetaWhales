@@ -5,7 +5,7 @@ import 'full_screen_chat_overlay.dart';
 class ChatOverlayHelper {
   static final Logger _logger = Logger();
   
-  static Future<void> showFullScreenChat(BuildContext context) async {
+  static Future<void> showFullScreenChat(BuildContext context, {String? initialMessage}) async {
     try {
       _logger.d('ChatOverlayHelper: Attempting to show full screen chat');
       await Navigator.of(context).push(
@@ -15,7 +15,7 @@ class ChatOverlayHelper {
           barrierColor: Colors.black.withOpacity(0.5),
           pageBuilder: (context, animation, secondaryAnimation) {
             _logger.d('ChatOverlayHelper: Creating FullScreenChatOverlay widget');
-            return const FullScreenChatOverlay();
+            return FullScreenChatOverlay(initialMessage: initialMessage);
           },
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(

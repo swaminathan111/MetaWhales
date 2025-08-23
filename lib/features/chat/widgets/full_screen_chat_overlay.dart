@@ -7,7 +7,8 @@ import '../services/openrouter_service.dart';
 import '../../../shared/widgets/chat/chat_message_bubble.dart';
 
 class FullScreenChatOverlay extends ConsumerStatefulWidget {
-  const FullScreenChatOverlay({super.key});
+  final String? initialMessage;
+  const FullScreenChatOverlay({super.key, this.initialMessage});
 
   @override
   ConsumerState<FullScreenChatOverlay> createState() => _FullScreenChatOverlayState();
@@ -64,6 +65,13 @@ class _FullScreenChatOverlayState extends ConsumerState<FullScreenChatOverlay>
       
       _animationController.forward();
       _logger.d('FullScreenChatOverlay: Animation started');
+      
+      // Send initial message if provided
+      if (widget.initialMessage != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _sendMessage(widget.initialMessage!);
+        });
+      }
     } catch (e) {
       _logger.e('FullScreenChatOverlay: Error in initState: $e');
     }

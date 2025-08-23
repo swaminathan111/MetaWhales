@@ -8,16 +8,13 @@ import '../auth/services/profile_service.dart';
 import '../cards/models/card_info.dart';
 import '../cards/providers/card_provider.dart';
 import '../cards/screens/add_card_screen.dart';
-import '../chat/services/chat_persistence_service.dart';
-import '../chat/services/rag_chat_service.dart';
-import '../chat/services/openrouter_service.dart';
 import '../../shared/widgets/navigation/bottom_navigation_bar.dart';
 import '../../shared/widgets/layout/gradient_header.dart';
 import '../../shared/widgets/buttons/quick_action_chips.dart';
 import '../../shared/widgets/buttons/cta_button_row.dart';
 import '../../shared/widgets/cards/card_preview_tile.dart';
 import '../../shared/widgets/cards/alert_promo_card.dart';
-import '../../shared/widgets/chat/chat_message_bubble.dart';
+import '../chat/widgets/chat_overlay_helper.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -27,8 +24,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final TextEditingController _messageController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
 
   @override
   Widget build(BuildContext context) {
@@ -71,171 +66,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Chat input field
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(
-                          color: Colors.grey[300]!,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _messageController,
-                              decoration: const InputDecoration(
-                                hintText: 'Ask me anything about your cards...',
-                                hintStyle: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 16,
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Container(
-                            margin: const EdgeInsets.only(right: 4),
-                            child: Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.mic, color: Colors.grey),
-                                  onPressed: () {
-                                    // TODO: Implement voice input
-                                  },
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.only(right: 8),
-                                  child: IconButton(
-                                    icon: const Icon(Icons.send, color: Colors.white, size: 20),
-                                    onPressed: _sendMessage,
-                                    style: IconButton.styleFrom(
-                                      backgroundColor: Color(0xFF58d5d3),
-                                      padding: const EdgeInsets.all(8),
-                                      minimumSize: const Size(36, 36),
-                                      maximumSize: const Size(36, 36),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(18),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                     
                     const SizedBox(height: 24),
                     
-                    // Chat messages section
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final messages = ref.watch(persistentChatMessagesProvider);
-                        
-                        if (messages.isEmpty) {
-                          return const SizedBox.shrink();
-                        }
-                        
-                        return Container(
-                          height: 300,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.grey[300]!,
-                              width: 1,
-                            ),
-                          ),
-                          child: ListView.builder(
-                            controller: _scrollController,
-                            padding: const EdgeInsets.all(16),
-                            itemCount: messages.length,
-                            itemBuilder: (context, index) {
-                              final message = messages[index];
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 16),
-                                child: ChatMessageBubble(message: message),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // CTA Button Row for AI response actions
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final messages = ref.watch(persistentChatMessagesProvider);
-                        
-                        // Only show CTA buttons if there are messages
-                        if (messages.isEmpty) {
-                          return const SizedBox.shrink();
-                        }
-                        
-                        return CTAButtonRow(
-                          actions: [
-                            CTAAction(id: 'ask_follow_up', title: 'Ask Follow-up', icon: Icons.chat),
-                            CTAAction(id: 'get_recommendation', title: 'Get Recommendation', icon: Icons.recommend, isPrimary: true),
-                            CTAAction(id: 'compare_options', title: 'Compare Options', icon: Icons.compare_arrows),
-                            CTAAction(id: 'view_details', title: 'View Details', icon: Icons.visibility),
-                          ],
-                          onActionTap: (action) {
-                            switch (action.id) {
-                              case 'ask_follow_up':
-                                // Focus on chat input for follow-up question
-                                FocusScope.of(context).requestFocus(FocusNode());
-                                break;
-                              case 'get_recommendation':
-                                _messageController.text = 'What card do you recommend for me?';
-                                _sendMessage();
-                                break;
-                              case 'compare_options':
-                                _messageController.text = 'Compare my card options';
-                                _sendMessage();
-                                break;
-                              case 'view_details':
-                                context.push('/cards');
-                                break;
-                            }
-                          },
-                        );
-                      },
-                    ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Quick Action Chips
-                    QuickActionChips(
+                    // CTA Button Row for AI assistance
+                    CTAButtonRow(
                       actions: [
-                        QuickAction(id: 'compare', title: 'Compare Cards', icon: Icons.compare_arrows),
-                        QuickAction(id: 'plan', title: 'Plan Purchase', icon: Icons.shopping_cart),
-                        QuickAction(id: 'travel', title: 'Travel Benefits', icon: Icons.flight),
+                        CTAAction(id: 'ask_follow_up', title: 'Ask Follow-up', icon: Icons.chat),
+                        CTAAction(id: 'get_recommendation', title: 'Get Recommendation', icon: Icons.recommend, isPrimary: true),
+                        CTAAction(id: 'compare_options', title: 'Compare Options', icon: Icons.compare_arrows),
+                        CTAAction(id: 'view_details', title: 'View Details', icon: Icons.visibility),
                       ],
-                      onActionTap: (action) {
-                        switch (action) {
-                          case 'compare':
-                            // TODO: Navigate to compare cards
+                      onActionTap: (action) async {
+                        String? predefinedMessage;
+                        switch (action.id) {
+                          case 'ask_follow_up':
+                            // Open chat overlay without predefined message
                             break;
-                          case 'plan':
-                            // TODO: Navigate to purchase planning
+                          case 'get_recommendation':
+                            predefinedMessage = 'What card do you recommend for me?';
                             break;
-                          case 'travel':
-                            // TODO: Navigate to travel section
+                          case 'compare_options':
+                            predefinedMessage = 'Compare my card options';
                             break;
-                          case 'add_card':
-                            context.push('/add-card');
-                            break;
+                          case 'view_details':
+                            context.push('/cards');
+                            return;
                         }
+                        
+                        // Open chat overlay with predefined message
+                        await ChatOverlayHelper.showFullScreenChat(context, initialMessage: predefinedMessage);
                       },
                     ),
                     
@@ -314,40 +174,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _sendMessage() async {
-    if (_messageController.text.trim().isEmpty) return;
-
-    final message = _messageController.text.trim();
-    _messageController.clear();
-
-    // Use the persistent chat notifier
-    final chatNotifier = ref.read(persistentChatMessagesProvider.notifier);
-
-    // Send message with persistence
-    await chatNotifier.sendMessage(message);
-
-    // Scroll to bottom
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    });
-
-    // Scroll to bottom again after AI response
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 1000), () {
-        if (mounted) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
-      });
-    });
-  }
 
   void _handleNavigationTap(int index, String route) {
     // Navigate to the selected route
