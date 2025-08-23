@@ -109,6 +109,7 @@ flutter:
     - assets/icons/cta_agent_circle.png
     - assets/icons/cta_agent_icon_name.png
     - assets/icons/cta_agent_circle_padded_10.png
+    - assets/icons/cta_agent_circle_padded_15.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

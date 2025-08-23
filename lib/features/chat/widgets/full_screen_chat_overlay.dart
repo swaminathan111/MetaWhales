@@ -215,16 +215,15 @@ class _FullScreenChatOverlayState extends ConsumerState<FullScreenChatOverlay>
                                 height: 40,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  gradient: LinearGradient(
-                                    colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
+                                  
                                 ),
-                                child: const Icon(
-                                  Icons.smart_toy,
-                                  color: Colors.white,
-                                  size: 20,
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    'assets/icons/cta_agent_circle.png',
+                                    width: 40,
+                                    height: 40,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
