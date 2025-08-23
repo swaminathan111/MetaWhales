@@ -309,11 +309,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       bottomNavigationBar: AppBottomNavigationBar(
         currentIndex: 0, // Home is always index 0
         onTap: _handleNavigationTap,
-        onCTATap: () {
-          // Handle CTA button tap - could open chat or AI assistant
-          // For now, focus on the chat input
-          FocusScope.of(context).requestFocus(FocusNode());
-        },
+        // Remove onCTATap override to use default chat overlay
       ),
     );
   }
