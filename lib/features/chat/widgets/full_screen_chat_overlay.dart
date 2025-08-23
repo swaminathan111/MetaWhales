@@ -375,23 +375,10 @@ class _FullScreenChatOverlayState extends ConsumerState<FullScreenChatOverlay>
               spacing: 8,
               runSpacing: 8,
               children: _conversationStarters.map((starter) {
-                return GestureDetector(
+                return _AnimatedConversationStarter(
+                  text: starter,
                   onTap: () => _sendMessage(starter),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
-                    ),
-                    child: Text(
-                      starter,
-                      style: TextStyle(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
+                  theme: theme,
                 );
               }).toList(),
             ),
@@ -526,6 +513,123 @@ class _FullScreenChatOverlayState extends ConsumerState<FullScreenChatOverlay>
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Animated conversation starter chip with micro-interactions
+class _AnimatedConversationStarter extends StatefulWidget {
+  final String text;
+  final VoidCallback onTap;
+  final ThemeData theme;
+
+  const _AnimatedConversationStarter({
+    required this.text,
+    required this.onTap,
+    required this.theme,
+  });
+
+  @override
+  State<_AnimatedConversationStarter> createState() => _AnimatedConversationStarterState();
+}
+
+class _AnimatedConversationStarterState extends State<_AnimatedConversationStarter>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _elevationAnimation;
+  bool _isPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+
+    _elevationAnimation = Tween<double>(
+      begin: 2.0,
+      end: 8.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    setState(() => _isPressed = true);
+    _animationController.forward();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    setState(() => _isPressed = false);
+    _animationController.reverse();
+    widget.onTap();
+  }
+
+  void _handleTapCancel() {
+    setState(() => _isPressed = false);
+    _animationController.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: GestureDetector(
+            onTapDown: _handleTapDown,
+            onTapUp: _handleTapUp,
+            onTapCancel: _handleTapCancel,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: _isPressed 
+                    ? widget.theme.colorScheme.primary.withOpacity(0.2)
+                    : widget.theme.colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: _isPressed
+                      ? widget.theme.colorScheme.primary.withOpacity(0.5)
+                      : widget.theme.colorScheme.primary.withOpacity(0.3),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.theme.colorScheme.primary.withOpacity(0.1),
+                    blurRadius: _elevationAnimation.value,
+                    offset: Offset(0, _elevationAnimation.value / 2),
+                  ),
+                ],
+              ),
+              child: Text(
+                widget.text,
+                style: TextStyle(
+                  color: widget.theme.colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

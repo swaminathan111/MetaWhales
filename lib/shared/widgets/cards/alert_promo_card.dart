@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 
-/// Alert and promotional card widget for in-feed notifications
-class AlertPromoCard extends StatelessWidget {
+/// Alert and promotional card widget with micro-interactions
+class AlertPromoCard extends StatefulWidget {
   const AlertPromoCard({
     super.key,
     required this.type,
@@ -21,21 +21,100 @@ class AlertPromoCard extends StatelessWidget {
   final bool showDismiss;
 
   @override
+  State<AlertPromoCard> createState() => _AlertPromoCardState();
+}
+
+class _AlertPromoCardState extends State<AlertPromoCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _pulseAnimation;
+  bool _isHovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.02,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.elasticOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    setState(() => _isHovered = true);
+    _animationController.forward();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    setState(() => _isHovered = false);
+    _animationController.reverse();
+    widget.onTap?.call();
+  }
+
+  void _handleTapCancel() {
+    setState(() => _isHovered = false);
+    _animationController.reverse();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final config = _getTypeConfig(type, theme);
+    final config = _getTypeConfig(widget.type, theme);
     
-    return Container(
-      padding: EdgeInsets.all(theme.spacing.md + theme.spacing.xs),
-      decoration: BoxDecoration(
-        color: config.backgroundColor,
-        borderRadius: theme.borderRadius.card,
-        border: Border.all(
-          color: config.borderColor,
-          width: 1,
-        ),
-        boxShadow: type == AlertType.promoted ? theme.shadows.card : null,
-      ),
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: GestureDetector(
+            onTapDown: widget.onTap != null ? _handleTapDown : null,
+            onTapUp: widget.onTap != null ? _handleTapUp : null,
+            onTapCancel: widget.onTap != null ? _handleTapCancel : null,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: EdgeInsets.all(theme.spacing.md + theme.spacing.xs),
+              decoration: BoxDecoration(
+                color: config.backgroundColor,
+                borderRadius: theme.borderRadius.card,
+                border: Border.all(
+                  color: _isHovered 
+                      ? config.borderColor.withOpacity(0.8)
+                      : config.borderColor,
+                  width: _isHovered ? 2 : 1,
+                ),
+                boxShadow: [
+                  if (widget.type == AlertType.promoted || _isHovered) 
+                    ...theme.shadows.card,
+                  if (_isHovered)
+                    BoxShadow(
+                      color: config.iconColor.withOpacity(0.1),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                ],
+              ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -49,14 +128,14 @@ class AlertPromoCard extends StatelessWidget {
               SizedBox(width: theme.spacing.md - theme.spacing.xs),
               Expanded(
                 child: Text(
-                  title,
+                  widget.title,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: config.titleColor,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              if (type == AlertType.promoted) ...[
+              if (widget.type == AlertType.promoted) ...[
                 Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: theme.spacing.sm,
@@ -76,10 +155,10 @@ class AlertPromoCard extends StatelessWidget {
                   ),
                 ),
               ],
-              if (showDismiss && onDismiss != null) ...[
+              if (widget.showDismiss && widget.onDismiss != null) ...[
                 SizedBox(width: theme.spacing.sm),
                 GestureDetector(
-                  onTap: onDismiss,
+                  onTap: widget.onDismiss,
                   child: Icon(
                     Icons.close,
                     size: 16,
@@ -90,18 +169,19 @@ class AlertPromoCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: theme.spacing.sm),
-          GestureDetector(
-            onTap: onTap,
-            child: Text(
-              message,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: config.messageColor,
-                height: 1.4,
-              ),
+          Text(
+            widget.message,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: config.messageColor,
+              height: 1.4,
             ),
           ),
         ],
       ),
+            ),
+          ),
+        );
+      },
     );
   }
 

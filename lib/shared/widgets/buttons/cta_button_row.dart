@@ -68,7 +68,7 @@ class CTAButtonRow extends StatelessWidget {
   }
 }
 
-class _CTAButton extends StatelessWidget {
+class _CTAButton extends StatefulWidget {
   const _CTAButton({
     required this.action,
     required this.onTap,
@@ -78,53 +78,135 @@ class _CTAButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_CTAButton> createState() => _CTAButtonState();
+}
+
+class _CTAButtonState extends State<_CTAButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _shimmerAnimation;
+  bool _isPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+
+    _shimmerAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    setState(() => _isPressed = true);
+    _animationController.forward();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    setState(() => _isPressed = false);
+    _animationController.reverse();
+    widget.onTap();
+  }
+
+  void _handleTapCancel() {
+    setState(() => _isPressed = false);
+    _animationController.reverse();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: theme.spacing.md,
-          vertical: theme.spacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: action.isPrimary 
-              ? theme.colorScheme.primary 
-              : theme.colorScheme.surfaceContainerHigh,
-          borderRadius: theme.borderRadius.medium,
-          border: action.isPrimary 
-              ? null 
-              : Border.all(
-                  color: theme.colorScheme.outline,
-                  width: 1,
-                ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (action.icon != null) ...[
-              Icon(
-                action.icon,
-                size: 16,
-                color: action.isPrimary 
-                    ? theme.colorScheme.onPrimary 
-                    : theme.colorScheme.onSurface,
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: GestureDetector(
+            onTapDown: _handleTapDown,
+            onTapUp: _handleTapUp,
+            onTapCancel: _handleTapCancel,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: EdgeInsets.symmetric(
+                horizontal: theme.spacing.md,
+                vertical: theme.spacing.sm,
               ),
-              SizedBox(width: theme.spacing.xs),
-            ],
-            Text(
-              action.title,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: action.isPrimary 
-                    ? theme.colorScheme.onPrimary 
-                    : theme.colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
+              decoration: BoxDecoration(
+                color: widget.action.isPrimary 
+                    ? theme.colorScheme.primary 
+                    : theme.colorScheme.surfaceContainerHigh,
+                borderRadius: theme.borderRadius.medium,
+                border: widget.action.isPrimary 
+                    ? null 
+                    : Border.all(
+                        color: _isPressed 
+                            ? theme.colorScheme.primary.withOpacity(0.5)
+                            : theme.colorScheme.outline,
+                        width: _isPressed ? 2 : 1,
+                      ),
+                boxShadow: [
+                  if (widget.action.isPrimary || _isPressed)
+                    BoxShadow(
+                      color: (widget.action.isPrimary 
+                          ? theme.colorScheme.primary 
+                          : theme.colorScheme.outline).withOpacity(0.2),
+                      blurRadius: _isPressed ? 12 : 8,
+                      spreadRadius: _isPressed ? 2 : 0,
+                      offset: Offset(0, _isPressed ? 4 : 2),
+                    ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.action.icon != null) ...[
+                    Icon(
+                      widget.action.icon,
+                      size: 16,
+                      color: widget.action.isPrimary 
+                          ? theme.colorScheme.onPrimary 
+                          : theme.colorScheme.onSurface,
+                    ),
+                    SizedBox(width: theme.spacing.xs),
+                  ],
+                  Text(
+                    widget.action.title,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: widget.action.isPrimary 
+                          ? theme.colorScheme.onPrimary 
+                          : theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
