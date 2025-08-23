@@ -29,7 +29,7 @@ class AppBottomNavigationBar extends StatelessWidget {
       icon: Icons.credit_card_outlined,
       activeIcon: Icons.credit_card,
       label: 'My Cards',
-      route: '/cards',
+      route: '/manage-cards',
     ),
     NavigationItem(
       icon: Icons.notifications_outlined,
