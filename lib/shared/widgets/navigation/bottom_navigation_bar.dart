@@ -26,16 +26,16 @@ class AppBottomNavigationBar extends StatelessWidget {
       route: '/',
     ),
     NavigationItem(
-      icon: Icons.notifications_outlined,
-      activeIcon: Icons.notifications,
-      label: 'Alerts',
-      route: '/alerts',
-    ),
-    NavigationItem(
       icon: Icons.credit_card_outlined,
       activeIcon: Icons.credit_card,
       label: 'My Cards',
       route: '/cards',
+    ),
+    NavigationItem(
+      icon: Icons.notifications_outlined,
+      activeIcon: Icons.notifications,
+      label: 'Alerts',
+      route: '/alerts',
     ),
     NavigationItem(
       icon: Icons.person_outline,
