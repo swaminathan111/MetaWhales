@@ -14,6 +14,7 @@ import '../../shared/widgets/buttons/quick_action_chips.dart';
 import '../../shared/widgets/buttons/cta_button_row.dart';
 import '../../shared/widgets/cards/card_preview_tile.dart';
 import '../../shared/widgets/cards/alert_promo_card.dart';
+import '../../shared/widgets/cards/personalization_nudge.dart';
 import '../chat/widgets/chat_overlay_helper.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -110,7 +111,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       },
                     ),
                     
-          
+                              
+                    // Personalization Nudge - "Did you know?" cards
+                    PersonalizationNudge(
+                      cardPerks: SampleCardPerks.perks,
+                    ),
                     
                     const SizedBox(height: 24),
                     
