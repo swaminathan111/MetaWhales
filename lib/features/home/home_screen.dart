@@ -117,21 +117,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       },
                     ),
                     
-                    const SizedBox(height: 16),
-                    
-                    AlertPromoCard(
-                      type: AlertType.promoted,
-                      title: 'Get 5% back on Amazon',
-                      message: 'Use your ICICI Amazon Pay card for your next purchase to unlock this offer.',
-                      onTap: () {
-                        // Navigate to offer details or activate offer
-                        context.push('/offers');
-                      },
-                      onDismiss: () {
-                        // Handle promo dismissal
-                      },
-                    ),
-                    
                     const SizedBox(height: 32),
                     
                     // Your Cards section
@@ -157,6 +142,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             context.push('/manage-cards');
                           },
                         );
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+                    
+                    AlertPromoCard(
+                      type: AlertType.promoted,
+                      title: 'Get 5% back on Amazon',
+                      message: 'Use your ICICI Amazon Pay card for your next purchase to unlock this offer.',
+                      onTap: () {
+                        // Navigate to offer details or activate offer
+                        context.push('/offers');
+                      },
+                      onDismiss: () {
+                        // Handle promo dismissal
                       },
                     ),
                   ],
