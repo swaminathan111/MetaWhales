@@ -12,6 +12,7 @@ import '../features/onboarding/screens/onboarding_screen.dart';
 import '../features/auth/auth_provider.dart';
 import '../services/onboarding_service.dart';
 import '../features/manage_cards/screens/manage_cards_screen.dart';
+import '../features/cards/screens/add_card_screen.dart';
 
 import '../core/logging/app_logger.dart';
 
@@ -181,6 +182,13 @@ class AppRouter {
           path: '/manage-cards',
           name: 'manage-cards',
           builder: (context, state) => const ManageCardsScreen(),
+        ),
+        
+        // Add Card Screen
+        GoRoute(
+          path: '/add-card',
+          name: 'add-card',
+          builder: (context, state) => const AddCardScreen(),
         ),
       ],
       errorBuilder: (context, state) => Scaffold(

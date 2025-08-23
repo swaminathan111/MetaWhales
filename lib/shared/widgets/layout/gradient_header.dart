@@ -7,13 +7,15 @@ class GradientHeader extends StatelessWidget {
     super.key,
     required this.userName,
     this.onProfileTap,
-    this.onActionTap,
+    this.onManageCardsTap,
+    this.onLogoutTap,
     this.showActions = true,
   });
 
   final String userName;
   final VoidCallback? onProfileTap;
-  final VoidCallback? onActionTap;
+  final VoidCallback? onManageCardsTap;
+  final VoidCallback? onLogoutTap;
   final bool showActions;
 
   @override
@@ -78,14 +80,15 @@ class GradientHeader extends StatelessWidget {
                           color: theme.colorScheme.onPrimary,
                         ),
                         tooltip: 'Manage Cards',
-                        onPressed: onActionTap,
+                        onPressed: onManageCardsTap,
                       ),
                       IconButton(
                         icon: Icon(
                           Icons.logout,
                           color: theme.colorScheme.onPrimary,
                         ),
-                        onPressed: onActionTap,
+                        tooltip: 'Logout',
+                        onPressed: onLogoutTap,
                       ),
                     ],
                   ),

@@ -50,8 +50,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             GradientHeader(
               userName: userName,
               onProfileTap: () => context.push('/profile'),
-              onActionTap: () async {
-                // Handle logout or manage cards action
+              onManageCardsTap: () => context.push('/manage-cards'),
+              onLogoutTap: () async {
+                // Handle logout action
                 await ref.read(authProvider.notifier).signOut();
                 if (context.mounted) {
                   context.go('/login');
@@ -67,18 +68,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     
-                    const SizedBox(height: 24),
+                    // const SizedBox(height: 10),
                     
                     // CTA Button Row for AI assistance
                     CTAButtonRow(
                       actions: [
                         CTAAction(id: 'get_recommendation', title: 'Get Recommendation', icon: Icons.recommend, isPrimary: true),
+                        CTAAction(id: 'lounge_access', title: 'Lounge Access', icon: Icons.spa),
                         CTAAction(id: 'ask_follow_up', title: 'Ask Follow-up', icon: Icons.chat),
                         CTAAction(id: 'compare_options', title: 'Compare Options', icon: Icons.compare_arrows),
-                        CTAAction(id: 'view_details', title: 'View Details', icon: Icons.visibility),
                         CTAAction(id: 'plan_purchase', title: 'Plan a Purchase', icon: Icons.shopping_cart),
                         CTAAction(id: 'see_travel', title: 'See Travel', icon: Icons.flight),
                         CTAAction(id: 'add_card', title: 'Add Card', icon: Icons.add_card),
+                        CTAAction(id: 'view_details', title: 'View Details', icon: Icons.visibility),
                       ],
                       onActionTap: (action) async {
                         String? predefinedMessage;
@@ -111,7 +113,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       },
                     ),
                     
-                              
+                    const SizedBox(height: 14), 
+
                     // Personalization Nudge - "Did you know?" cards
                     PersonalizationNudge(
                       cardPerks: SampleCardPerks.perks,

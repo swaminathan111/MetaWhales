@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../models/credit_card_model.dart';
 import '../widgets/credit_card_widget.dart';
 
@@ -148,7 +149,9 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
                   TextButton.icon(
                     icon: const Icon(Icons.add_circle_outline),
                     label: const Text('ADD'),
-                    onPressed: () {},
+                    onPressed: () {
+                      context.push('/add-card');
+                    },
                   ),
                 ],
               ),
