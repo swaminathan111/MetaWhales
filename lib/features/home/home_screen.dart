@@ -48,7 +48,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // Header Section with Gradient
             GradientHeader(
               userName: userName,
-              insightText: 'Let\'s make every swipe the smartest move',
               onProfileTap: () => context.push('/profile'),
               onActionTap: () async {
                 // Handle logout or manage cards action
@@ -195,8 +194,3 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
 }
-
-
-
-
-

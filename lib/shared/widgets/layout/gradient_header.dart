@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 
-/// Reusable gradient header with greeting and insight card
+/// Reusable gradient header with greeting
 class GradientHeader extends StatelessWidget {
   const GradientHeader({
     super.key,
     required this.userName,
-    required this.insightText,
     this.onProfileTap,
     this.onActionTap,
     this.showActions = true,
   });
 
   final String userName;
-  final String insightText;
   final VoidCallback? onProfileTap;
   final VoidCallback? onActionTap;
   final bool showActions;
@@ -43,7 +41,7 @@ class GradientHeader extends StatelessWidget {
           theme.spacing.lg,
           theme.spacing.lg,
           theme.spacing.lg,
-          theme.spacing.xl,
+          theme.spacing.lg,  // Reduced bottom padding since no insight card
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,29 +100,6 @@ class GradientHeader extends StatelessWidget {
               style: theme.textTheme.headlineSmall?.copyWith(
                 color: theme.colorScheme.onPrimary,
                 fontWeight: FontWeight.w400,
-              ),
-            ),
-            
-            SizedBox(height: theme.spacing.xs),
-            
-            // Insight card
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(theme.spacing.md + theme.spacing.xs),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onPrimary.withOpacity(0.2),
-                borderRadius: theme.borderRadius.card,
-                border: Border.all(
-                  color: theme.colorScheme.onPrimary.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                insightText,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onPrimary,
-                  height: 1.4,
-                ),
               ),
             ),
           ],
